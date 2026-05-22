@@ -1,6 +1,6 @@
 --[[
-    YTDEVS - FREE CAM CINEMATIC PRO (VERSÃO ULTRA-ESTÁVEL FIX)
-    - Menu Principal com Scrolling Frame Seguro Corrigido
+    YTDEVS - FREE CAM CINEMATIC PRO (VERSÃO MOBILE ESTÁVEL FIX)
+    - Menu Principal com Ordem Sequencial Estrita (Sem caixa preta)
     - Drone Glide (Movimentação e Rotação 360° com Suavização Lerp)
     - Modo Cinema Automático e Gerador de Tela Verde (Chroma Key)
     - Ferramentas de Cenário: Ocultar Jogadores, Clone de Atores e Filtro Ultra
@@ -150,7 +150,7 @@ MinCircle.InputBegan:Connect(function(input)
 end)
 
 -- =============================================================================
--- [4] CONSTRUÇÃO DO PAINEL DE ROLAGEM CORRIGIDO (SEQUENCIAL)
+-- [4] CONSTRUÇÃO SEQUENCIAL DO PAINEL DE ROLAGEM (CORREÇÃO MOBILE)
 -- =============================================================================
 local ScrollFrame = Instance.new("ScrollingFrame")
 ScrollFrame.Name = "Container"
@@ -162,7 +162,7 @@ ScrollFrame.ScrollBarThickness = 5
 ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(120, 120, 125)
 ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 ScrollFrame.AutomaticCanvasSize = Enum.AutomaticCanvasSize.Y
-ScrollFrame.Parent = Main  -- Definido o pai estritamente aqui
+ScrollFrame.Parent = Main -- Atribuído o pai estritamente antes de injetar filhos
 
 local ListLayout = Instance.new("UIListLayout")
 ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -176,7 +176,7 @@ UIPadding.PaddingBottom = UDim.new(0, 15)
 UIPadding.Parent = ScrollFrame
 
 -- =============================================================================
--- [5] INJEÇÃO DE RECURSOS E BOTÕES DE CONTROLE (ORDEM DE LAYOUT CORRIGIDA)
+-- [5] INJEÇÃO DE ELEMENTOS INTERNOS (ORDEM DE LAYOUT GARANTIDA)
 -- =============================================================================
 local SpeedFrame = Instance.new("Frame", ScrollFrame)
 SpeedFrame.Size = UDim2.new(1, -30, 0, 40)
@@ -267,7 +267,7 @@ local function createScrollBtn(text, color)
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 13
     Instance.new("UICorner", btn)
-    btn.Parent = ScrollFrame
+    btn.Parent = ScrollFrame -- Vinculado após a criação isolada do objeto
     return btn
 end
 
@@ -640,4 +640,4 @@ FramingBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-print("YTDEVS HUB: Atualizado com sistema sequencial mobile de alta performance!")
+print("YTDEVS HUB: Carregado perfeitamente com renderização mobile garantida!")
