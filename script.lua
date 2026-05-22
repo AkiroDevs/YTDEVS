@@ -1,6 +1,6 @@
 --[[
-    YTDEVS - FREE CAM CINEMATIC PRO (SISTEMA UNIFICADO 100% CORRIGIDO)
-    - Menu Principal com Painel de Rolagem Seguro para Mobile
+    YTDEVS - FREE CAM CINEMATIC PRO (VERSÃO ULTRA-ESTÁVEL FIX)
+    - Menu Principal com Scrolling Frame Seguro Corrigido
     - Drone Glide (Movimentação e Rotação 360° com Suavização Lerp)
     - Modo Cinema Automático e Gerador de Tela Verde (Chroma Key)
     - Ferramentas de Cenário: Ocultar Jogadores, Clone de Atores e Filtro Ultra
@@ -150,9 +150,9 @@ MinCircle.InputBegan:Connect(function(input)
 end)
 
 -- =============================================================================
--- [4] CONSTRUÇÃO DO PAINEL DE ROLAGEM CORRIGIDO (SCROLLING FRAME)
+-- [4] CONSTRUÇÃO DO PAINEL DE ROLAGEM CORRIGIDO (SEQUENCIAL)
 -- =============================================================================
-local ScrollFrame = Instance.new("ScrollingFrame", Main)
+local ScrollFrame = Instance.new("ScrollingFrame")
 ScrollFrame.Name = "Container"
 ScrollFrame.Size = UDim2.new(1, 0, 1, -40)
 ScrollFrame.Position = UDim2.new(0, 0, 0, 40)
@@ -162,18 +162,21 @@ ScrollFrame.ScrollBarThickness = 5
 ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(120, 120, 125)
 ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 ScrollFrame.AutomaticCanvasSize = Enum.AutomaticCanvasSize.Y
+ScrollFrame.Parent = Main  -- Definido o pai estritamente aqui
 
-local ListLayout = Instance.new("UIListLayout", ScrollFrame)
+local ListLayout = Instance.new("UIListLayout")
 ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 ListLayout.Padding = UDim.new(0, 8)
 ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+ListLayout.Parent = ScrollFrame
 
-local UIPadding = Instance.new("UIPadding", ScrollFrame)
+local UIPadding = Instance.new("UIPadding")
 UIPadding.PaddingTop = UDim.new(0, 8)
 UIPadding.PaddingBottom = UDim.new(0, 15)
+UIPadding.Parent = ScrollFrame
 
 -- =============================================================================
--- [5] INJEÇÃO DE RECURSOS E BOTÕES DE CONTROLE
+-- [5] INJEÇÃO DE RECURSOS E BOTÕES DE CONTROLE (ORDEM DE LAYOUT CORRIGIDA)
 -- =============================================================================
 local SpeedFrame = Instance.new("Frame", ScrollFrame)
 SpeedFrame.Size = UDim2.new(1, -30, 0, 40)
@@ -256,7 +259,7 @@ FOVPlus.MouseButton1Click:Connect(function()
 end)
 
 local function createScrollBtn(text, color)
-    local btn = Instance.new("TextButton", ScrollFrame)
+    local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -30, 0, 45)
     btn.Text = text
     btn.BackgroundColor3 = color
@@ -264,6 +267,7 @@ local function createScrollBtn(text, color)
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 13
     Instance.new("UICorner", btn)
+    btn.Parent = ScrollFrame
     return btn
 end
 
@@ -636,4 +640,4 @@ FramingBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-print("YTDEVS HUB: Carregado perfeitamente via nuvem!")
+print("YTDEVS HUB: Atualizado com sistema sequencial mobile de alta performance!")
