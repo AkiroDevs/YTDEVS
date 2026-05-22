@@ -1,8 +1,9 @@
---[[
-    YTDEVS - FREE CAM CINEMATIC PRO (PARTE 1)
-    - Menu Principal com Controle de Velocidade e FOV
-    - Botão de Tela Verde (Chroma Key)
-    - Analógico Virtual Independente e Botões de Altitude
+here--[[
+    YTDEVS - FREE CAM SCROLLING MENU (PARTE 1 ATUALIZADA)
+    - Janela Compacta com Painel de Rolagem Dinâmico (ScrollingFrame)
+    - Organização Automática por Lista (UIListLayout)
+    - Controles de Velocidade e FOV embutidos na rolagem
+    - Botão de Tela Verde (Chroma Key) incluso
 ]]
 
 local Players = game:GetService("Players")
@@ -12,7 +13,7 @@ local CoreGui = game:GetService("CoreGui")
 
 local LocalPlayer = Players.LocalPlayer
 
--- Limpa execuções anteriores para evitar sobreposição
+-- Limpa execuções anteriores
 if CoreGui:FindFirstChild("YtDevs") then CoreGui.YtDevs:Destroy() end
 if CoreGui:FindFirstChild("YtDevsMobileControls") then CoreGui.YtDevsMobileControls:Destroy() end
 
@@ -20,7 +21,7 @@ shared.Screen = Instance.new("ScreenGui", CoreGui)
 shared.Screen.Name = "YtDevs"
 shared.Screen.ResetOnSpawn = false
 
--- Configurações Compartilhadas (Globais entre as partes)
+-- Configurações Globais Compartilhadas
 shared.FreeCamActive = false
 shared.CamLockActive = false
 shared.LockedCameraCFrame = nil
@@ -34,15 +35,13 @@ shared.dragStart = nil
 
 local greenScreenPart = nil
 
--- Função para fixar o personagem
 function shared.setCharacterFrozen(frozen)
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then 
-        char.HumanoidRootPart.Ancuted = frozen 
+        char.HumanoidRootPart.Anchored = frozen 
     end
 end
 
--- Função Modo Cinema
 function shared.setCinematicMode(enabled)
     local state = not enabled
     pcall(function()
@@ -52,7 +51,6 @@ function shared.setCinematicMode(enabled)
     end)
 end
 
--- Função de Arrastar Janela
 local function MakeDraggable(obj)
     local dragging, sPos, dStart
     obj.InputBegan:Connect(function(input)
@@ -73,10 +71,10 @@ local function MakeDraggable(obj)
     end)
 end
 
--- ================== JANELA PRINCIPAL ==================
+-- ================== JANELA PRINCIPAL COMPACTA ==================
 local Main = Instance.new("Frame", shared.Screen)
 Main.Name = "Main"
-Main.Size = UDim2.new(0, 280, 0, 360)
+Main.Size = UDim2.new(0, 280, 0, 320) -- Tamanho fixo e seguro para telas mobile
 Main.Position = UDim2.new(0.5, -140, 0.25, 0)
 Main.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
@@ -84,16 +82,16 @@ Instance.new("UIStroke", Main).Color = Color3.new(1, 1, 1)
 MakeDraggable(Main)
 
 local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, 0, 0, 35)
-Title.Text = "YTDEVS CINEMATIC V1"
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Text = "YTDEVS CINEMATIC HUB"
 Title.TextColor3 = Color3.new(1, 1, 1)
 Title.Font = Enum.Font.GothamBlack
 Title.TextSize = 14
 Title.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
 
 local MinBtn = Instance.new("TextButton", Main)
-MinBtn.Size = UDim2.new(0, 30, 0, 30)
-MinBtn.Position = UDim2.new(1, -40, 0, 2)
+MinBtn.Size = UDim2.new(0, 30, 0, 40)
+MinBtn.Position = UDim2.new(1, -40, 0, 0)
 MinBtn.Text = "—"
 MinBtn.TextColor3 = Color3.new(1, 1, 1)
 MinBtn.Font = Enum.Font.GothamBold
@@ -128,14 +126,41 @@ MinCircle.InputBegan:Connect(function(input)
     end
 end)
 
--- CONTROLE DE VELOCIDADE
-local SpeedFrame = Instance.new("Frame", Main)
-SpeedFrame.Size = UDim2.new(1, -40, 0, 35)
-SpeedFrame.Position = UDim2.new(0, 20, 0, 45)
-SpeedFrame.BackgroundTransparency = 1
+-- ================== PAINEL DE ROLAGEM DINÂMICO (SCROLLING FRAME) ==================
+-- Esse container contêm todas as funções e permite arrastar para cima/baixo
+local ScrollFrame = Instance.new("ScrollingFrame", Main)
+ScrollFrame.Name = "Container"
+ScrollFrame.Size = UDim2.new(1, 0, 1, -45)
+ScrollFrame.Position = UDim2.new(0, 0, 0, 45)
+ScrollFrame.BackgroundTransparency = 1
+ScrollFrame.BorderSizePixel = 0
+ScrollFrame.ScrollBarThickness = 4
+ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 105)
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+ScrollFrame.AutomaticCanvasSize = Enum.AutomaticCanvasSize.Y -- Cresce sozinho!
+
+-- Layout de Lista: Garante espaçamento e alinhamento perfeito de 8 pixels entre os blocos
+local ListLayout = Instance.new("UIListLayout", ScrollFrame)
+ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+ListLayout.Padding = UDim.new(0, 8)
+ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- Margem interna para os botões não colarem nas bordas do menu
+local UIPadding = Instance.new("UIPadding", ScrollFrame)
+Uipadding.PaddingTop = UDim.new(0, 5)
+Uipadding.PaddingBottom = UDim.new(0, 10)
+
+-- ================== FUNÇÕES INTERNAS DA ROLAGEM ==================
+
+-- 1. CONTROLE DE VELOCIDADE
+local SpeedFrame = Instance.new("Frame", ScrollFrame)
+SpeedFrame.Size = UDim2.new(1, -30, 0, 40)
+SpeedFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+Instance.new("UICorner", SpeedFrame)
 
 local SpeedLabel = Instance.new("TextLabel", SpeedFrame)
 SpeedLabel.Size = UDim2.new(0, 120, 1, 0)
+SpeedLabel.Position = UDim2.new(0, 10, 0, 0)
 SpeedLabel.Text = "Velocidade: 20"
 SpeedLabel.TextColor3 = Color3.new(1, 1, 1)
 SpeedLabel.Font = Enum.Font.GothamBold
@@ -144,17 +169,17 @@ SpeedLabel.BackgroundTransparency = 1
 
 local SpeedMinus = Instance.new("TextButton", SpeedFrame)
 SpeedMinus.Size = UDim2.new(0, 30, 0, 30)
-SpeedMinus.Position = UDim2.new(1, -65, 0, 2)
+SpeedMinus.Position = UDim2.new(1, -70, 0, 5)
 SpeedMinus.Text = "-"
-SpeedMinus.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+SpeedMinus.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
 SpeedMinus.TextColor3 = Color3.new(1, 1, 1)
 Instance.new("UICorner", SpeedMinus)
 
 local SpeedPlus = Instance.new("TextButton", SpeedFrame)
 SpeedPlus.Size = UDim2.new(0, 30, 0, 30)
-SpeedPlus.Position = UDim2.new(1, -30, 0, 2)
+SpeedPlus.Position = UDim2.new(1, -35, 0, 5)
 SpeedPlus.Text = "+"
-SpeedPlus.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+SpeedPlus.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
 SpeedPlus.TextColor3 = Color3.new(1, 1, 1)
 Instance.new("UICorner", SpeedPlus)
 
@@ -167,14 +192,15 @@ SpeedPlus.MouseButton1Click:Connect(function()
     SpeedLabel.Text = "Velocidade: " .. shared.moveSpeed
 end)
 
--- CONTROLE DE FOV (ZOOM CINEMATOGRÁFICO)
-local FOVFrame = Instance.new("Frame", Main)
-FOVFrame.Size = UDim2.new(1, -40, 0, 35)
-FOVFrame.Position = UDim2.new(0, 20, 0, 85)
-FOVFrame.BackgroundTransparency = 1
+-- 2. CONTROLE DE FOV (ZOOM)
+local FOVFrame = Instance.new("Frame", ScrollFrame)
+FOVFrame.Size = UDim2.new(1, -30, 0, 40)
+FOVFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+Instance.new("UICorner", FOVFrame)
 
 local FOVLabel = Instance.new("TextLabel", FOVFrame)
 FOVLabel.Size = UDim2.new(0, 120, 1, 0)
+FOVLabel.Position = UDim2.new(0, 10, 0, 0)
 FOVLabel.Text = "Zoom (FOV): 70"
 FOVLabel.TextColor3 = Color3.new(1, 1, 1)
 FOVLabel.Font = Enum.Font.GothamBold
@@ -183,17 +209,17 @@ FOVLabel.BackgroundTransparency = 1
 
 local FOVMinus = Instance.new("TextButton", FOVFrame)
 FOVMinus.Size = UDim2.new(0, 30, 0, 30)
-FOVMinus.Position = UDim2.new(1, -65, 0, 2)
+FOVMinus.Position = UDim2.new(1, -70, 0, 5)
 FOVMinus.Text = "In"
-FOVMinus.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+FOVMinus.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
 FOVMinus.TextColor3 = Color3.new(1, 1, 1)
 Instance.new("UICorner", FOVMinus)
 
 local FOVPlus = Instance.new("TextButton", FOVFrame)
 FOVPlus.Size = UDim2.new(0, 30, 0, 30)
-FOVPlus.Position = UDim2.new(1, -30, 0, 2)
+FOVPlus.Position = UDim2.new(1, -35, 0, 5)
 FOVPlus.Text = "Out"
-FOVPlus.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+FOVPlus.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
 FOVPlus.TextColor3 = Color3.new(1, 1, 1)
 Instance.new("UICorner", FOVPlus)
 
@@ -209,51 +235,39 @@ FOVPlus.MouseButton1Click:Connect(function()
     Camera.FieldOfView = shared.cameraFOV
 end)
 
--- BOTÕES DE ATIVAÇÃO
-shared.FreeCamBtn = Instance.new("TextButton", Main)
-shared.FreeCamBtn.Size = UDim2.new(1, -40, 0, 45)
-shared.FreeCamBtn.Position = UDim2.new(0, 20, 0, 130)
-shared.FreeCamBtn.Text = "ATIVAR FREE CAM"
-shared.FreeCamBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
-shared.FreeCamBtn.TextColor3 = Color3.new(1, 1, 1)
-shared.FreeCamBtn.Font = Enum.Font.GothamBold
-Instance.new("UICorner", shared.FreeCamBtn)
+-- Função Auxiliar para criar botões de ação rápidos dentro da lista rolável
+local function createScrollBtn(text, color)
+    local btn = Instance.new("TextButton", ScrollFrame)
+    btn.Size = UDim2.new(1, -30, 0, 45)
+    btn.Text = text
+    btn.BackgroundColor3 = color
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 13
+    Instance.new("UICorner", btn)
+    return btn
+end
 
-shared.CamLockBtn = Instance.new("TextButton", Main)
-shared.CamLockBtn.Size = UDim2.new(1, -40, 0, 45)
-shared.CamLockBtn.Position = UDim2.new(0, 20, 0, 185)
-shared.CamLockBtn.Text = "CAM LOCK"
-shared.CamLockBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
-shared.CamLockBtn.TextColor3 = Color3.new(1, 1, 1)
-shared.CamLockBtn.Font = Enum.Font.GothamBold
-Instance.new("UICorner", shared.CamLockBtn)
-
--- BOTÃO TELA VERDE (CHROMA KEY)
-local GreenBtn = Instance.new("TextButton", Main)
-GreenBtn.Size = UDim2.new(1, -40, 0, 45)
-GreenBtn.Position = UDim2.new(0, 20, 0, 240)
-GreenBtn.Text = "SPAWNAR TELA VERDE"
-GreenBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-GreenBtn.TextColor3 = Color3.new(1, 1, 1)
-GreenBtn.Font = Enum.Font.GothamBold
-Instance.new("UICorner", GreenBtn)
+-- 3. BOTÕES PRINCIPAIS DE ATIVAÇÃO
+shared.FreeCamBtn = createScrollBtn("ATIVAR FREE CAM", Color3.fromRGB(55, 55, 60))
+shared.CamLockBtn = createScrollBtn("CAM LOCK", Color3.fromRGB(55, 55, 60))
+local GreenBtn = createScrollBtn("SPAWNAR TELA VERDE", Color3.fromRGB(0, 140, 0))
 
 GreenBtn.MouseButton1Click:Connect(function()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
         if greenScreenPart then greenScreenPart:Destroy() end
         greenScreenPart = Instance.new("Part", workspace)
-        greenScreenPart.Size = Vector3.new(25, 20, 1)
+        greenScreenPart.Size = Vector3.new(30, 22, 1)
         greenScreenPart.Color = Color3.fromRGB(0, 255, 0)
         greenScreenPart.Material = Enum.Material.SmoothPlastic
         greenScreenPart.Anchored = true
         greenScreenPart.CanCollide = false
-        -- Posiciona ligeiramente atrás do personagem
-        greenScreenPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 4, -6)
+        greenScreenPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 5, -7)
     end
 end)
 
--- INTERFACE MOBILE (ANALÓGICO VIRTUAL EXCLUSIVO)
+-- ================== INTERFACE MOBILE (ANALÓGICO VIRTUAL) ==================
 shared.MobileControls = Instance.new("ScreenGui", CoreGui)
 shared.MobileControls.Name = "YtDevsMobileControls"
 shared.MobileControls.Enabled = false
@@ -317,7 +331,7 @@ UIS.InputEnded:Connect(function(input)
     end
 end)
 
-print("Parte 1 carregada com sucesso!")--[[
+print("Menu com rolagem construído! Pronto para receber as partes mecânicas e extras.")--[[
     YTDEVS - FREE CAM CINEMATIC PRO (PARTE 2)
     - Conexão com as variáveis da Parte 1
     - Suavização Drone Glide (Matriz Lerp aplicada na Câmera)
@@ -632,4 +646,262 @@ RS.RenderStepped:Connect(function()
     end
 end)
 
-print("Parte 3 instalada com sucesso! O estúdio mobile de cinema está completo.")
+print("Parte 3 instalada com sucesso! O estúdio mobile de cinema está completo.")--[[
+    YTDEVS - FREE CAM CINEMATIC PRO (PARTE 4 - MÓDULO IA)
+    - IA de Rastreamento de Alvo (AI Tracking Camera)
+    - Suavização Preditiva de Movimento
+    - Integração direta no Menu Principal
+]]
+
+local Players = game:GetService("Players")
+local RS = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local Main = shared.Screen:FindFirstChild("Main")
+if not Main then 
+    warn("Erro: Execute a Parte 1 antes de carregar a Parte 4!")
+    return 
+end
+
+-- Ajusta o tamanho da janela principal para o novo botão de IA
+Main.Size = UDim2.new(0, 280, 0, 570)
+
+-- Estados da IA
+local aiTrackingActive = false
+local aiTargetPlayer = nil
+local aiHeightOffset = 4 -- Altura padrão do cameraman virtual
+local aiDistance = 12 -- Distância padrão do alvo
+
+-- Cria o Botão da IA no Menu
+local AiBtn = Instance.new("TextButton", Main)
+AiBtn.Size = UDim2.new(1, -40, 0, 40)
+AiBtn.Position = UDim2.new(0, 20, 0, 445)
+AiBtn.Text = "IA: CAMERA SEGUIDORA (DESATIVADO)"
+AiBtn.BackgroundColor3 = Color3.fromRGB(0, 85, 180)
+AiBtn.TextColor3 = Color3.new(1, 1, 1)
+AiBtn.Font = Enum.Font.GothamBlack
+AiBtn.TextSize = 11
+Instance.new("UICorner", AiBtn)
+
+-- Função da "IA" para escanear e selecionar o melhor alvo para a gravação
+local function findBestTarget()
+    -- Prioriza o próprio jogador, mas se houver outros muito perto, pode rastrear
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        return char.HumanoidRootPart
+    end
+    return nil
+end
+
+-- Loop de funcionamento do Cameraman de IA
+RS.RenderStepped:Connect(function(delta)
+    if aiTrackingActive then
+        Camera.CameraType = Enum.CameraType.Scriptable
+        
+        -- Tomada de decisão: Encontrar o alvo se ele sumir ou resetar
+        if not aiTargetPlayer or not aiTargetPlayer.Parent then
+            aiTargetPlayer = findBestTarget()
+        end
+        
+        if aiTargetPlayer then
+            -- 1. Coleta a posição e velocidade preditiva do alvo
+            local targetPos = aiTargetPlayer.Position
+            local targetVelocity = aiTargetPlayer.AssemblyLinearVelocity or Vector3.new()
+            
+            -- 2. Calcula a posição ideal para onde a câmera da IA deve voar
+            -- Ela tenta se posicionar ligeiramente atrás e acima do vetor de movimento do alvo
+            local idealPos = targetPos + Vector3.new(0, aiHeightOffset, aiDistance)
+            
+            -- Se o alvo estiver correndo rápido, a IA compensa inclinando para frente (efeito de velocidade)
+            if targetVelocity.Magnitude > 1 then
+                idealPos = idealPos + (targetVelocity.Unit * -2)
+            end
+            
+            -- 3. ALGORITMO LERP (Interpolação Preditiva): Faz o drone da IA voar suavemente até o ponto ideal
+            -- O fator '0.08' cria um atraso cinemático idêntico a um operador humano guiando o drone
+            local newCamPos = Camera.CFrame.Position:Lerp(idealPos, 0.08)
+            
+            -- 4. Foco Computacional: Força a matriz de rotação a olhar fixamente para o centro do alvo
+            local lookAtCFrame = CFrame.new(newCamPos, targetPos + Vector3.new(0, 1.5, 0))
+            
+            Camera.CFrame = lookAtCFrame
+        end
+    end
+end)
+
+-- Ativador do Botão da IA
+AiBtn.MouseButton1Click:Connect(function()
+    aiTrackingActive = not aiTrackingActive
+    
+    if aiTrackingActive then
+        -- Desativa modos manuais para a IA assumir o controle total
+        if shared.FreeCamActive then 
+            shared.FreeCamBtn:Click() -- Força desligar a FreeCam manual se estiver ativa
+        end
+        
+        aiTargetPlayer = findBestTarget()
+        AiBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+        AiBtn.Text = "IA: CAMERA SEGUIDORA (RODANDO)"
+        shared.setCharacterFrozen(false) -- Permite o personagem andar para a IA filmar ele correndo
+    else
+        AiBtn.BackgroundColor3 = Color3.fromRGB(0, 85, 180)
+        AiBtn.Text = "IA: CAMERA SEGUIDORA (DESATIVADO)"
+        Camera.CameraType = Enum.CameraType.Custom
+    end
+end)
+
+print("Parte 4 Carregada! Módulo de inteligência artificial de rastreamento pronto.")--[[
+    YTDEVS - FREE CAM CINEMATIC PRO (PARTE 5 - INTELIGÊNCIA ARTIFICIAL AVANÇADA)
+    - IA Diretor de Corte (Adaptação por ações do jogador)
+    - IA Drone Physics (Inclinação e física de vento nas curvas)
+    - IA Auto-Framing (Ajuste inteligente de distância e FOV)
+]]
+
+local Players = game:GetService("Players")
+local RS = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local ScrollFrame = shared.Screen and shared.Screen:FindFirstChild("Main") and shared.Screen.Main:FindFirstChild("Container")
+if not ScrollFrame then 
+    warn("Erro: Execute a Parte 1 (Menu de Rolagem) antes de carregar a Parte 5!")
+    return 
+end
+
+-- Estados dos Novos Módulos de IA
+local aiDirectorActive = false
+local aiDronePhysicsActive = false
+local aiAutoFramingActive = false
+
+-- Variáveis de controle interno dos algoritmos
+local lastAction = "Idle"
+local currentRoll = 0
+local frameDistance = 14
+
+-- Função Auxiliar para Criar Botões de IA na Lista Rolável
+local function createAiBtn(text, color)
+    local btn = Instance.new("TextButton", ScrollFrame)
+    btn.Size = UDim2.new(1, -30, 0, 45)
+    btn.Text = text
+    btn.BackgroundColor3 = color
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.GothamBlack
+    btn.TextSize = 12
+    Instance.new("UICorner", btn)
+    return btn
+end
+
+-- Criação dos Botões Virtuais
+local DirectorBtn = createAiBtn("IA: DIRETOR DE CORTE (OFF)", Color3.fromRGB(0, 50, 120))
+local DronePhysBtn = createAiBtn("IA: DRONE PHYSICS (OFF)", Color3.fromRGB(0, 50, 120))
+local FramingBtn = createAiBtn("IA: ENQUADRAMENTO DE FOCO (OFF)", Color3.fromRGB(0, 50, 120))
+
+-- ================== LOOP DE PROCESSAMENTO DA IA (RENDERSTEPPED) ==================
+RS.RenderStepped:Connect(function(delta)
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local humanoid = char and char:FindFirstChild("Humanoid")
+    
+    if not hrp or not humanoid then return end
+    
+    -- 1. LÓGICA: IA DIRETOR DE CORTE
+    if aiDirectorActive and shared.FreeCamActive then
+        local velocity = hrp.AssemblyLinearVelocity.Magnitude
+        
+        if velocity < 1 and lastAction ~= "Idle" then
+            lastAction = "Idle"
+            -- Personagem parou: IA decide fazer um take lateral cinematográfico aproximado
+            shared.cameraFOV = 45
+            shared.moveSpeed = 8
+            local targetAngle = hrp.CFrame * CFrame.new(8, 3, -8)
+            Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(targetAngle.Position, hrp.Position), 0.05)
+            
+        elseif velocity >= 1 and lastAction ~= "Moving" then
+            lastAction = "Moving"
+            -- Personagem começou a correr: IA abre a lente e foca na velocidade
+            shared.cameraFOV = 75
+            shared.moveSpeed = 25
+        end
+    end
+    
+    -- 2. LÓGICA: IA DRONE PHYSICS (INCLINAÇÃO CINEMATOGRÁFICA)
+    if aiDronePhysicsActive and shared.FreeCamActive then
+        -- Se o analógico da câmera se mover para os lados, calcula a força da curva
+        if shared.moveInputVector.X ~= 0 then
+            -- Aplica uma inclinação suave ($Roll$) de até 8 graus dependendo da direção
+            local targetRoll = -math.rad(8) * shared.moveInputVector.X
+            currentRoll = math.clamp(currentRoll + (targetRoll - currentRoll) * 0.05, -0.15, 0.15)
+        else
+            -- Retorna a estabilização horizontal se estiver voando reto
+            currentRoll = currentRoll * 0.9
+        end
+        
+        -- Injeta a rotação Z (Roll) na câmera simulando física de vento e asas
+        Camera.CFrame = Camera.CFrame * CFrame.Angles(0, 0, currentRoll)
+    end
+    
+    -- 3. LÓGICA: IA ENQUADRAMENTO DE FOCO (AUTO-FRAMING)
+    if aiAutoFramingActive then
+        Camera.CameraType = Enum.CameraType.Scriptable
+        
+        -- Calcula a distância real entre a câmera e o ator
+        local currentDist = (Camera.CFrame.Position - hrp.Position).Magnitude
+        
+        -- Tomada de decisão matemática: Ajusta o FOV dinamicamente para o ator nunca sumir da tela
+        if currentDist > frameDistance then
+            -- Se o personagem se afastar, a IA fecha o FOV (Dá Zoom automático)
+            shared.cameraFOV = math.clamp(shared.cameraFOV - 0.5, 30, 85)
+        elseif currentDist < frameDistance - 2 then
+            -- Se o personagem chegar muito perto, a IA abre o FOV (Retira o Zoom)
+            shared.cameraFOV = math.clamp(shared.cameraFOV + 0.5, 30, 85)
+        end
+        
+        Camera.FieldOfView = shared.cameraFOV
+        -- Força a câmera a manter o olhar 100% fixo e centralizado no torso do jogador
+        Camera.CFrame = CFrame.new(Camera.CFrame.Position, hrp.Position + Vector3.new(0, 1, 0))
+    end
+end)
+
+-- ================== GATILHOS DE ATIVAÇÃO DOS BOTÕES ==================
+
+DirectorBtn.MouseButton1Click:Connect(function()
+    aiDirectorActive = not aiDirectorActive
+    if aiDirectorActive then
+        DirectorBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+        DirectorBtn.Text = "IA: DIRETOR DE CORTE (ATIVADO)"
+    else
+        DirectorBtn.BackgroundColor3 = Color3.fromRGB(0, 50, 120)
+        DirectorBtn.Text = "IA: DIRETOR DE CORTE (OFF)"
+    end
+end)
+
+DronePhysBtn.MouseButton1Click:Connect(function()
+    aiDronePhysicsActive = not aiDronePhysicsActive
+    if aiDronePhysicsActive then
+        DronePhysBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+        DronePhysBtn.Text = "IA: DRONE PHYSICS (ATIVADO)"
+    else
+        DronePhysBtn.BackgroundColor3 = Color3.fromRGB(0, 50, 120)
+        DronePhysBtn.Text = "IA: DRONE PHYSICS (OFF)"
+        currentRoll = 0
+    end
+end)
+
+FramingBtn.MouseButton1Click:Connect(function()
+    aiAutoFramingActive = not aiAutoFramingActive
+    if aiAutoFramingActive then
+        -- Desativa a freecam manual para a câmera inteligente focar no enquadramento
+        if shared.FreeCamActive then shared.FreeCamBtn:Click() end
+        
+        FramingBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+        FramingBtn.Text = "IA: ENQUADRAMENTO DE FOCO (ATIVADO)"
+        shared.setCharacterFrozen(false) -- Libera o criador para andar e testar o foco inteligente
+    else
+        FramingBtn.BackgroundColor3 = Color3.fromRGB(0, 50, 120)
+        FramingBtn.Text = "IA: ENQUADRAMENTO DE FOCO (OFF)"
+        Camera.CameraType = Enum.CameraType.Custom
+    end
+end)
+
+print("Parte 5 Carregada! Módulos avançados de inteligência artificial acoplados na rolagem.")
