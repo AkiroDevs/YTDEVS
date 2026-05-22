@@ -1,9 +1,10 @@
---[[
-    YTDEVS - CINEMATIC HUB PRO MAX (REVISÃO ANTIBUG MOBILE)
-    - Fix de Renderização: Transferido de CoreGui para PlayerGui (Zero Telas Pretas)
-    - Engine Segura: Propriedades carregadas antes do Parentesco para evitar sumiço de UI
-    - Correções: Removidas propriedades inválidas e ajustado o Arraste Mobile Estável
-]]
+-- [[
+--    YTDEVS - CINEMATIC HUB PRO MAX v2 (EDIÇÃO ABSOLUTA UNIFICADA)
+--    - Fix Total Mobile: Renderizado via PlayerGui para evitar bugs e telas pretas
+--    - Rotação 360° Total: Olhar livre calibrado sem travas de ângulo esférico
+--    - Fusão Completa: Inclusão de Chroma Key, Ocultar Players, Clone de Ator e Filtros Ultra
+--    - Modo Cinema Agressivo: Background Loop garantindo ocultação de HUD/Chat
+-- ]]
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
@@ -16,7 +17,7 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local Camera = workspace.CurrentCamera
 
 -- ==========================================
--- [1] LIMPEZA TOTAL DE VERSÕES ANTERIORES
+-- [1] LIMPEZA DE INSTÂNCIAS DE MEMÓRIA
 -- ==========================================
 pcall(function()
     if PlayerGui:FindFirstChild("YtDevsProMax") then PlayerGui.YtDevsProMax:Destroy() end
@@ -25,11 +26,12 @@ pcall(function()
     if PlayerGui:FindFirstChild("YtDevsMobileCtrl") then PlayerGui.YtDevsMobileCtrl:Destroy() end
 end)
 
+-- Estados de Controle Globais
 local state = {
     freecam = false,
     camLock = false,
     lockedCFrame = nil,
-    speed = 25,
+    speed = 20,
     fov = 70,
     yaw = 0,
     pitch = 0,
@@ -50,21 +52,17 @@ local origLighting = {
     Brightness = Lighting.Brightness
 }
 
--- Instanciação limpa dos filtros gráficos máximos
+-- Efeitos Visuais Pré-Injetados
 local colorCorrection = Instance.new("ColorCorrectionEffect")
 local depthOfField = Instance.new("DepthOfFieldEffect")
 local bloom = Instance.new("BloomEffect")
-colorCorrection.Enabled = false
-depthOfField.Enabled = false
-bloom.Enabled = false
-colorCorrection.Parent = Lighting
-depthOfField.Parent = Lighting
-bloom.Parent = Lighting
+colorCorrection.Enabled = false; depthOfField.Enabled = false; bloom.Enabled = false
+colorCorrection.Parent = Lighting; depthOfField.Parent = Lighting; bloom.Parent = Lighting
 
 local targetCFrame = Camera.CFrame
 
 -- ==========================================
--- [2] HELPER DE CONSTRUÇÃO SEGURA (ANTI-BUG)
+-- [2] MOTOR DE CONSTRUÇÃO ANTI-FALHAS (UI)
 -- ==========================================
 local function create(className, properties)
     local instance = Instance.new(className)
@@ -74,9 +72,7 @@ local function create(className, properties)
     return instance
 end
 
--- ==========================================
--- [3] SISTEMA DE ARRASTE ROBUSTO PARA CELULAR
--- ==========================================
+-- Sistema de arrastar janelas otimizado para Touchscreen
 local function makeDraggable(frame, handle)
     handle = handle or frame
     local dragging, dragInput, dragStart, startPos
@@ -88,9 +84,7 @@ local function makeDraggable(frame, handle)
             startPos = frame.Position
             
             input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
             end)
         end
     end)
@@ -113,7 +107,7 @@ local function makeDraggable(frame, handle)
 end
 
 -- ==========================================
--- [4] INTERFACE DO USUÁRIO PRINCIPAL (GUI)
+-- [3] CRIAÇÃO DA INTERFACE DO USUÁRIO
 -- ==========================================
 local Screen = create("ScreenGui", {
     Name = "YtDevsProMax",
@@ -121,16 +115,17 @@ local Screen = create("ScreenGui", {
     Parent = PlayerGui
 })
 
+-- Frame Principal Dimensionado para Todas as Funções
 local Main = create("Frame", {
     Name = "MainFrame",
-    Size = UDim2.new(0, 280, 0, 440),
-    Position = UDim2.new(0.5, -140, 0.25, 0),
-    BackgroundColor3 = Color3.fromRGB(15, 15, 18),
+    Size = UDim2.new(0, 290, 0, 490),
+    Position = UDim2.new(0.5, -145, 0.2, 0),
+    BackgroundColor3 = Color3.fromRGB(20, 20, 25),
     ZIndex = 1,
     Parent = Screen
 })
 create("UICorner", { CornerRadius = UDim.new(0, 10), Parent = Main })
-local MainStroke = create("UIStroke", { Color = Color3.fromRGB(255, 0, 60), Width = 2, Parent = Main })
+create("UIStroke", { Color = Color3.fromRGB(255, 255, 255), Width = 1.5, Parent = Main })
 
 local Title = create("TextLabel", {
     Size = UDim2.new(1, 0, 0, 40),
@@ -138,14 +133,14 @@ local Title = create("TextLabel", {
     TextColor3 = Color3.new(1, 1, 1),
     Font = Enum.Font.GothamBold,
     TextSize = 13,
-    BackgroundColor3 = Color3.fromRGB(25, 25, 30),
+    BackgroundColor3 = Color3.fromRGB(35, 35, 40),
     ZIndex = 2,
     Parent = Main
 })
 create("UICorner", { CornerRadius = UDim.new(0, 10), Parent = Title })
 makeDraggable(Main, Title)
 
--- Controles superiores (Minimizar e Fechar)
+-- Botões do Canto Superior
 local MinBtn = create("TextButton", {
     Size = UDim2.new(0, 35, 0, 40),
     Position = UDim2.new(1, -75, 0, 0),
@@ -162,29 +157,29 @@ local CloseBtn = create("TextButton", {
     Size = UDim2.new(0, 35, 0, 40),
     Position = UDim2.new(1, -40, 0, 0),
     Text = "✕",
-    TextColor3 = Color3.fromRGB(255, 60, 60),
+    TextColor3 = Color3.fromRGB(255, 70, 70),
     Font = Enum.Font.GothamBold,
     TextSize = 14,
     BackgroundTransparency = 1,
     ZIndex = 3,
     Parent = Main
 })
-CloseBtn.MouseButton1Click:Connect(function() Screen:Destroy() pcall(function() PlayerGui.YtDevsMobileCtrl:Destroy() end) end)
 
+-- Ícone Flutuante Compacto para Desminimização
 local FloatingBtn = create("TextButton", {
     Size = UDim2.new(0, 55, 0, 55),
-    Position = UDim2.new(0.05, 0, 0.3, 0),
-    BackgroundColor3 = Color3.fromRGB(15, 15, 18),
+    Position = UDim2.new(0.05, 0, 0.25, 0),
+    BackgroundColor3 = Color3.fromRGB(255, 0, 0),
     Text = "YT",
-    TextColor3 = Color3.fromRGB(255, 0, 60),
-    Font = Enum.Font.GothamBold,
-    TextSize = 18,
+    TextColor3 = Color3.new(1, 1, 1),
+    Font = Enum.Font.GothamBlack,
+    TextSize = 20,
     Visible = false,
     ZIndex = 10,
     Parent = Screen
 })
 create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = FloatingBtn })
-local FloatStroke = create("UIStroke", { Color = Color3.fromRGB(255, 0, 60), Width = 2, Parent = FloatingBtn })
+create("UIStroke", { Color = Color3.fromRGB(255, 255, 255), Width = 1.5, Parent = FloatingBtn })
 makeDraggable(FloatingBtn)
 
 MinBtn.MouseButton1Click:Connect(function()
@@ -199,7 +194,7 @@ FloatingBtn.MouseButton1Click:Connect(function()
     Main.Visible = true
 end)
 
--- Container com alinhamento manual pré-renderizado
+-- Container dos Botões
 local Container = create("Frame", {
     Size = UDim2.new(1, 0, 1, -45),
     Position = UDim2.new(0, 0, 0, 45),
@@ -208,18 +203,19 @@ local Container = create("Frame", {
     Parent = Main
 })
 
-local Layout = create("UIListLayout", {
+create("UIListLayout", {
     SortOrder = Enum.SortOrder.LayoutOrder,
     Padding = UDim.new(0, 6),
     HorizontalAlignment = Enum.HorizontalAlignment.Center,
     Parent = Container
 })
 
--- Construtores Dinâmicos com ZIndex Fixo
-local function createAdjuster(name, initialVal, onMinus, onPlus)
+-- Helper de Controladores Numéricos (Velocidade / FOV)
+local function createAdjuster(name, initialVal, minVal, maxVal, step, onUpdate)
+    local current = initialVal
     local frame = create("Frame", {
-        Size = UDim2.new(1, -24, 0, 36),
-        BackgroundColor3 = Color3.fromRGB(22, 22, 26),
+        Size = UDim2.new(1, -24, 0, 38),
+        BackgroundColor3 = Color3.fromRGB(28, 28, 33),
         ZIndex = 3,
         Parent = Container
     })
@@ -228,7 +224,7 @@ local function createAdjuster(name, initialVal, onMinus, onPlus)
     local lbl = create("TextLabel", {
         Size = UDim2.new(0, 140, 1, 0),
         Position = UDim2.new(0, 12, 0, 0),
-        Text = name .. ": " .. initialVal,
+        Text = name .. ": " .. current,
         TextColor3 = Color3.new(1, 1, 1),
         Font = Enum.Font.GothamBold,
         TextSize = 12,
@@ -239,48 +235,53 @@ local function createAdjuster(name, initialVal, onMinus, onPlus)
     })
 
     local minus = create("TextButton", {
-        Size = UDim2.new(0, 32, 0, 26),
+        Size = UDim2.new(0, 32, 0, 28),
         Position = UDim2.new(1, -74, 0, 5),
         Text = "◀",
-        BackgroundColor3 = Color3.fromRGB(32, 32, 38),
-        TextColor3 = Color3.fromRGB(255, 0, 60),
+        BackgroundColor3 = Color3.fromRGB(40, 40, 45),
+        TextColor3 = Color3.fromRGB(255, 255, 255),
         ZIndex = 4,
         Parent = frame
     })
     create("UICorner", { Parent = minus })
-    minus.MouseButton1Click:Connect(function() onMinus(lbl) end)
 
     local plus = create("TextButton", {
-        Size = UDim2.new(0, 32, 0, 26),
+        Size = UDim2.new(0, 32, 0, 28),
         Position = UDim2.new(1, -38, 0, 5),
         Text = "▶",
-        BackgroundColor3 = Color3.fromRGB(32, 32, 38),
-        TextColor3 = Color3.fromRGB(255, 0, 60),
+        BackgroundColor3 = Color3.fromRGB(40, 40, 45),
+        TextColor3 = Color3.fromRGB(255, 255, 255),
         ZIndex = 4,
         Parent = frame
     })
     create("UICorner", { Parent = plus })
-    plus.MouseButton1Click:Connect(function() onPlus(lbl) end)
+
+    minus.MouseButton1Click:Connect(function()
+        current = math.max(minVal, current - step)
+        lbl.Text = name .. ": " .. current
+        onUpdate(current)
+    end)
+
+    plus.MouseButton1Click:Connect(function()
+        current = math.min(maxVal, current + step)
+        lbl.Text = name .. ": " .. current
+        onUpdate(current)
+    end)
 end
 
-createAdjuster("Velocidade Drone", state.speed, 
-    function(lbl) state.speed = math.max(2, state.speed - 5); lbl.Text = "Velocidade Drone: " .. state.speed end,
-    function(lbl) state.speed = math.min(180, state.speed + 5); lbl.Text = "Velocidade Drone: " .. state.speed end
-)
+-- Instanciando Ajustadores
+createAdjuster("Velocidade Drone", state.speed, 5, 160, 5, function(v) state.speed = v end)
+createAdjuster("Lente Lupa (FOV)", state.fov, 10, 120, 5, function(v) state.fov = v if state.freecam then Camera.FieldOfView = v end end)
 
-createAdjuster("Lente Lupa (FOV)", state.fov, 
-    function(lbl) state.fov = math.max(15, state.fov - 5); Camera.FieldOfView = state.fov; lbl.Text = "Lente Lupa (FOV): " .. state.fov end,
-    function(lbl) state.fov = math.min(120, state.fov + 5); Camera.FieldOfView = state.fov; lbl.Text = "Lente Lupa (FOV): " .. state.fov end
-)
-
+-- Helper de Geração de Botões Simples
 local function createBtn(text, color)
     local btn = create("TextButton", {
-        Size = UDim2.new(1, -24, 0, 38),
+        Size = UDim2.new(1, -24, 0, 40),
         Text = text,
         BackgroundColor3 = color,
         TextColor3 = Color3.new(1, 1, 1),
         Font = Enum.Font.GothamBold,
-        TextSize = 11.5,
+        TextSize = 12,
         ZIndex = 3,
         Parent = Container
     })
@@ -288,15 +289,15 @@ local function createBtn(text, color)
     return btn
 end
 
-local BtnFreeCam = createBtn("ATIVAR DRONE FREECAM", Color3.fromRGB(32, 32, 38))
-local BtnCamLock = createBtn("CAM LOCK (CONGELAR CÂMERA)", Color3.fromRGB(32, 32, 38))
-local BtnGreen = createBtn("SPAWNAR CHROMA KEY (TELA VERDE)", Color3.fromRGB(0, 140, 60))
-local BtnHide = createBtn("OCULTAR TODOS JOGADORES", Color3.fromRGB(160, 0, 40))
-local BtnClone = createBtn("GERAR CLONE DE ATOR", Color3.fromRGB(100, 20, 160))
-local BtnUltra = createBtn("FILTRO CINEMATIC ULTRA (OFF)", Color3.fromRGB(45, 45, 50))
+local BtnFreeCam = createBtn("FREE CAM (ATIVAR DRONE)", Color3.fromRGB(45, 45, 50))
+local BtnCamLock = createBtn("CAM LOCK (TRAVAR CÂMERA)", Color3.fromRGB(45, 45, 50))
+local BtnGreen   = createBtn("SPAWNAR TELA VERDE CHROMA", Color3.fromRGB(0, 135, 60))
+local BtnHide    = createBtn("OCULTAR TODOS JOGADORES", Color3.fromRGB(150, 0, 35))
+local BtnClone   = createBtn("GERAR CLONE DE ATOR", Color3.fromRGB(110, 30, 150))
+local BtnUltra   = createBtn("FILTRO CINEMATIC ULTRA (OFF)", Color3.fromRGB(55, 55, 60))
 
 -- ==========================================
--- [5] CONTROLES JOCKSTICK EM CAMADA SEPARADA
+-- [4] INTERFACE ISOLADA MOBILE CONTROLS
 -- ==========================================
 local MobileGui = create("ScreenGui", {
     Name = "YtDevsMobileCtrl",
@@ -307,27 +308,29 @@ local MobileGui = create("ScreenGui", {
 
 local JoyBase = create("Frame", {
     Size = UDim2.new(0, 110, 0, 110),
-    Position = UDim2.new(0.06, 0, 0.60, 0),
+    Position = UDim2.new(0.08, 0, 0.62, 0),
     BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-    BackgroundTransparency = 0.6,
+    BackgroundTransparency = 0.5,
     Parent = MobileGui
 })
 create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = JoyBase })
+create("UIStroke", { Color = Color3.new(1, 1, 1), Width = 1, Parent = JoyBase })
 
 local JoyStick = create("Frame", {
-    Size = UDim2.new(0, 42, 0, 42),
-    Position = UDim2.new(0.5, -21, 0.5, -21),
-    BackgroundColor3 = Color3.fromRGB(255, 0, 60),
+    Size = UDim2.new(0, 44, 0, 44),
+    Position = UDim2.new(0.5, -22, 0.5, -22),
+    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+    BackgroundTransparency = 0.3,
     Parent = JoyBase
 })
 create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = JoyStick })
 
 local function createAltBtn(txt, pos)
     local b = create("TextButton", {
-        Size = UDim2.new(0, 55, 0, 55),
+        Size = UDim2.new(0, 58, 0, 58),
         Position = pos,
-        BackgroundColor3 = Color3.fromRGB(15, 15, 18),
-        BackgroundTransparency = 0.2,
+        BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+        BackgroundTransparency = 0.4,
         TextColor3 = Color3.new(1, 1, 1),
         Text = txt,
         Font = Enum.Font.GothamBlack,
@@ -335,16 +338,16 @@ local function createAltBtn(txt, pos)
         Parent = MobileGui
     })
     create("UICorner", { Parent = b })
-    create("UIStroke", { Color = Color3.fromRGB(255, 0, 60), Parent = b })
+    create("UIStroke", { Color = Color3.new(1, 1, 1), Parent = b })
     return b
 end
 
-local BtnUp = createAltBtn("▲", UDim2.new(0.85, 0, 0.52, -65))
-local BtnDown = createAltBtn("▼", UDim2.new(0.85, 0, 0.52, 10))
+local BtnUp = createAltBtn("▲", UDim2.new(0.86, 0, 0.5, -70))
+local BtnDown = createAltBtn("▼", UDim2.new(0.86, 0, 0.5, 10))
 
 BtnUp.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then state.flyUp = true end end)
 BtnUp.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then state.flyUp = false end end)
-BtnDown.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then state.flyUp = false ; state.flyDown = true end end)
+BtnDown.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then state.flyDown = true end end)
 BtnDown.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then state.flyDown = false end end)
 
 JoyBase.InputBegan:Connect(function(input)
@@ -354,76 +357,87 @@ JoyBase.InputBegan:Connect(function(input)
     end
 end)
 
+-- Processamento de Touchscreen (Analógico Esquerdo + Olhar Esférico 360 Direito)
 UIS.InputChanged:Connect(function(input)
     if input == state.dragInput then
         local delta = Vector2.new(input.Position.X, input.Position.Y) - state.dragStart
         if delta.Magnitude > 45 then delta = delta.Unit * 45 end
-        JoyStick.Position = UDim2.new(0.5, -21 + delta.X, 0.5, -21 + delta.Y)
+        JoyStick.Position = UDim2.new(0.5, -22 + delta.X, 0.5, -22 + delta.Y)
         state.moveVector = Vector3.new(delta.X / 45, 0, delta.Y / 45)
     elseif state.freecam and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) and input ~= state.dragInput then
+        -- Permite giro 360 completo em qualquer eixo sem nós gráficos
         state.yaw = state.yaw - (input.Delta.X * 0.0075)
-        state.pitch = math.clamp(state.pitch - (input.Delta.Y * 0.0075), -math.rad(88), math.rad(88))
+        state.pitch = state.pitch - (input.Delta.Y * 0.0075)
+        
+        -- Clamping seguro em 89.9 graus para evitar a inversão de tela e quebra da câmera do Roblox
+        state.pitch = math.clamp(state.pitch, -math.rad(89.9), math.rad(89.9))
     end
 end)
 
 UIS.InputEnded:Connect(function(input)
     if input == state.dragInput then
         state.dragInput = nil
-        JoyStick.Position = UDim2.new(0.5, -21, 0.5, -21)
+        JoyStick.Position = UDim2.new(0.5, -22, 0.5, -22)
         state.moveVector = Vector3.new(0,0,0)
     end
 end)
 
 -- ==========================================
--- [6] SISTEMAS DA MESA DE EFEITOS E EVENTOS
+-- [5] LÓGICA DE GERENCIAMENTO CINEMATOGRÁFICO
 -- ==========================================
-local function hideCharacterParts(char, shouldHide)
-    for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") or part:IsA("Decal") then
-            if not part:GetAttribute("OrigTrans") then 
-                part:SetAttribute("OrigTrans", part.Transparency) 
-            end
-            part.Transparency = shouldHide and 1 or part:GetAttribute("OrigTrans")
-        end
+local function setCinematicHUD(disabled)
+    local visibility = not disabled
+    pcall(function()
+        StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, visibility)
+        StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, visibility)
+        StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, visibility)
+    end)
+end
+
+local function setCharacterFrozen(frozen)
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then 
+        char.HumanoidRootPart.Anchored = frozen 
     end
 end
 
 local function applyGlobalVisibility()
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character then
-            hideCharacterParts(p.Character, state.playersHidden)
+            for _, part in ipairs(p.Character:GetDescendants()) do
+                if part:IsA("BasePart") or part:IsA("Decal") then
+                    if not part:GetAttribute("OrigTrans") then part:SetAttribute("OrigTrans", part.Transparency) end
+                    part.Transparency = state.playersHidden and 1 or part:GetAttribute("OrigTrans")
+                end
+            end
         end
     end
 end
 
 Players.PlayerAdded:Connect(function(p)
     p.CharacterAdded:Connect(function(char)
-        if state.playersHidden then task.wait(0.2) hideCharacterParts(char, true) end
+        if state.playersHidden then task.wait(0.3) applyGlobalVisibility() end
     end)
 end)
 
+-- ==========================================
+-- [6] ACIONADORES DOS BOTÕES (TRIGGERS)
+-- ==========================================
 BtnFreeCam.MouseButton1Click:Connect(function()
     state.freecam = not state.freecam
     MobileGui.Enabled = state.freecam
-    
-    local char = LocalPlayer.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then 
-        char.HumanoidRootPart.Anchored = state.freecam 
-    end
-    
-    pcall(function() StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, not state.freecam) end)
-    
+    setCharacterFrozen(state.freecam)
+    setCinematicHUD(state.freecam)
+
     if state.freecam then
         state.camLock = false
-        BtnCamLock.BackgroundColor3 = Color3.fromRGB(32, 32, 38)
-        BtnFreeCam.BackgroundColor3 = Color3.fromRGB(255, 0, 60)
-        BtnFreeCam.Text = "DESATIVAR DRONE FREECAM"
+        BtnCamLock.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+        BtnFreeCam.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
         local x, y, z = Camera.CFrame:ToEulerAnglesYXZ()
         state.yaw, state.pitch = y, x
         targetCFrame = Camera.CFrame
     else
-        BtnFreeCam.BackgroundColor3 = Color3.fromRGB(32, 32, 38)
-        BtnFreeCam.Text = "ATIVAR DRONE FREECAM"
+        BtnFreeCam.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
         Camera.CameraType = Enum.CameraType.Custom
     end
 end)
@@ -433,16 +447,14 @@ BtnCamLock.MouseButton1Click:Connect(function()
     if state.camLock then
         if state.freecam then
             state.freecam = false
-            BtnFreeCam.BackgroundColor3 = Color3.fromRGB(32, 32, 38)
-            BtnFreeCam.Text = "ATIVAR DRONE FREECAM"
+            BtnFreeCam.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
             MobileGui.Enabled = false
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then char.HumanoidRootPart.Anchored = false end
+            setCharacterFrozen(false)
         end
-        BtnCamLock.BackgroundColor3 = Color3.fromRGB(255, 0, 60)
+        BtnCamLock.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
         state.lockedCFrame = Camera.CFrame
     else
-        BtnCamLock.BackgroundColor3 = Color3.fromRGB(32, 32, 38)
+        BtnCamLock.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
         state.lockedCFrame = nil
         Camera.CameraType = Enum.CameraType.Custom
     end
@@ -453,10 +465,10 @@ BtnGreen.MouseButton1Click:Connect(function()
     if char and char:FindFirstChild("HumanoidRootPart") then
         if state.greenScreen then state.greenScreen:Destroy() end
         state.greenScreen = create("Part", {
-            Size = Vector3.new(50, 32, 1),
+            Size = Vector3.new(65, 38, 1),
             Color = Color3.fromRGB(0, 255, 0),
             Material = Enum.Material.SmoothPlastic,
-            CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 6, -13),
+            CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 8, -15),
             Anchored = true,
             CanCollide = false,
             Parent = workspace
@@ -466,52 +478,53 @@ end)
 
 BtnHide.MouseButton1Click:Connect(function()
     state.playersHidden = not state.playersHidden
-    BtnHide.BackgroundColor3 = state.playersHidden and Color3.fromRGB(255, 0, 60) or Color3.fromRGB(160, 0, 40)
+    BtnHide.BackgroundColor3 = state.playersHidden and Color3.fromRGB(230, 0, 40) or Color3.fromRGB(150, 0, 35)
     applyGlobalVisibility()
 end)
 
 BtnClone.MouseButton1Click:Connect(function()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
-        if state.clone then state.clone:Destroy() end
-        char.Archivable = true
-        state.clone = char:Clone()
-        char.Archivable = false
-        state.clone.Parent = workspace
-        state.clone:PivotTo(char.HumanoidRootPart.CFrame)
-        
-        for _, part in ipairs(state.clone:GetDescendants()) do
-            if part:IsA("BasePart") then part.Anchored = true part.CanCollide = false end
-            if part:IsA("Script") or part:IsA("LocalScript") then part:Destroy() end
+        if state.clone then 
+            state.clone:Destroy()
+            state.clone = nil
+            BtnClone.BackgroundColor3 = Color3.fromRGB(110, 30, 150)
+            BtnClone.Text = "GERAR CLONE DE ATOR"
+        else
+            char.Archivable = true
+            state.clone = char:Clone()
+            char.Archivable = false
+            state.clone.Parent = workspace
+            state.clone:PivotTo(char.HumanoidRootPart.CFrame)
+            for _, part in ipairs(state.clone:GetDescendants()) do
+                if part:IsA("BasePart") then part.Anchored = true part.CanCollide = false end
+                if part:IsA("Script") or part:IsA("LocalScript") then part:Destroy() end
+            end
+            BtnClone.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+            BtnClone.Text = "LIMPAR CLONE ATIVO"
         end
-        BtnClone.BackgroundColor3 = Color3.fromRGB(255, 0, 60)
-        BtnClone.Text = "CLONE ATIVO (CLIQUE P/ LIMPAR)"
-    else
-        if state.clone then state.clone:Destroy(); state.clone = nil end
-        BtnClone.BackgroundColor3 = Color3.fromRGB(100, 20, 160)
-        BtnClone.Text = "GERAR CLONE DE ATOR"
     end
 end)
 
 BtnUltra.MouseButton1Click:Connect(function()
     state.cinematicLight = not state.cinematicLight
     if state.cinematicLight then
-        BtnUltra.BackgroundColor3 = Color3.fromRGB(255, 0, 60)
+        BtnUltra.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
         BtnUltra.Text = "FILTRO CINEMATIC ULTRA (ON)"
-        Lighting.Ambient = Color3.fromRGB(135, 135, 145)
-        Lighting.Brightness = 2.8
+        Lighting.Ambient = Color3.fromRGB(130, 130, 140)
+        Lighting.Brightness = 2.6
         colorCorrection.Saturation = 0.35
-        colorCorrection.Contrast = 0.2
+        colorCorrection.Contrast = 0.15
         colorCorrection.Enabled = true
-        depthOfField.FarIntensity = 0.85
-        depthOfField.FocusDistance = 14
-        depthOfField.InFocusRadius = 22
+        depthOfField.FarIntensity = 0.8
+        depthOfField.FocusDistance = 15
+        depthOfField.InFocusRadius = 25
         depthOfField.Enabled = true
-        bloom.Intensity = 0.65
-        bloom.Size = 24
+        bloom.Intensity = 0.6
+        bloom.Size = 22
         bloom.Enabled = true
     else
-        BtnUltra.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+        BtnUltra.BackgroundColor3 = Color3.fromRGB(55, 55, 60)
         BtnUltra.Text = "FILTRO CINEMATIC ULTRA (OFF)"
         Lighting.Ambient = origLighting.Ambient
         Lighting.OutdoorAmbient = origLighting.OutdoorAmbient
@@ -522,8 +535,25 @@ BtnUltra.MouseButton1Click:Connect(function()
     end
 end)
 
+CloseBtn.MouseButton1Click:Connect(function()
+    setCinematicHUD(false)
+    setCharacterFrozen(false)
+    if state.greenScreen then state.greenScreen:Destroy() end
+    if state.clone then state.clone:Destroy() end
+    Screen:Destroy()
+    MobileGui:Destroy()
+end)
+
+-- Loop Secundário Assíncrono para Trancamento de HUD Cinema
+task.spawn(function()
+    while true do
+        task.wait(0.3)
+        if state.freecam then setCinematicHUD(true) end
+    end
+end)
+
 -- ==========================================
--- [7] CINEMA GLIDE LERP LOOP (FLUIDEZ MAX)
+-- [7] LOOP CRÍTICO DE RENDERIZAÇÃO DA CÂMERA
 -- ==========================================
 RS.RenderStepped:Connect(function(dt)
     if state.freecam then
@@ -531,21 +561,22 @@ RS.RenderStepped:Connect(function(dt)
         Camera.FieldOfView = state.fov
         
         local lookCF = CFrame.Angles(0, state.yaw, 0) * CFrame.Angles(state.pitch, 0, 0)
-        local moveDir = Vector3.new(0,0,0)
+        local moveDir = Vector3.new(0, 0, 0)
         
         if state.moveVector.Magnitude > 0 then
             local camRot = Camera.CFrame - Camera.CFrame.Position
             moveDir = camRot:VectorToWorldSpace(Vector3.new(state.moveVector.X, 0, state.moveVector.Z))
         end
         
-        local vert = 0
-        if state.flyUp then vert = 1 elseif state.flyDown then vert = -1 end
+        local verticalMove = 0
+        if state.flyUp then verticalMove = 1 elseif state.flyDown then verticalMove = -1 end
         
-        local finalMove = Vector3.new(moveDir.X, moveDir.Y + vert, moveDir.Z)
+        local finalMove = Vector3.new(moveDir.X, moveDir.Y + verticalMove, moveDir.Z)
         if finalMove.Magnitude > 0 then finalMove = finalMove.Unit * state.speed * dt end
         
         local nextCFrame = CFrame.new(targetCFrame.Position + finalMove) * lookCF
-        local smoothWeight = 1 - math.exp(-14 * dt)
+        local smoothWeight = 1 - math.exp(-15 * dt)
+        
         Camera.CFrame = Camera.CFrame:Lerp(nextCFrame, math.clamp(smoothWeight, 0, 1))
         targetCFrame = nextCFrame
         
