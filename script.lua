@@ -1,9 +1,9 @@
 -- [[
---    YTDEVS - CINEMATIC HUB PRO MAX v2 (EDIÇÃO ABSOLUTA UNIFICADA)
---    - Fix Total Mobile: Renderizado via PlayerGui para evitar bugs e telas pretas
---    - Rotação 360° Total: Olhar livre calibrado sem travas de ângulo esférico
---    - Fusão Completa: Inclusão de Chroma Key, Ocultar Players, Clone de Ator e Filtros Ultra
---    - Modo Cinema Agressivo: Background Loop garantindo ocultação de HUD/Chat
+--    YTDEVS - CINEMATIC HUB PRO MAX v3 (CORREÇÃO ABSOLUTA DE RENDERIZAÇÃO)
+--    - Fix Total Mobile: Tamanhos absolutos em pixels (Offset) para evitar botões invisíveis
+--    - Parentesco Seguro: Propriedade .Parent aplicada estritamente no final da inicialização
+--    - Rotação 360° Total: Olhar livre calibrado sem nós gráficos ou inversões de eixos
+--    - Recursos Preservados: Chroma Key, Ocultar Players, Clone de Ator e Filtros Ultra
 -- ]]
 
 local Players = game:GetService("Players")
@@ -16,17 +16,14 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local Camera = workspace.CurrentCamera
 
--- ==========================================
--- [1] LIMPEZA DE INSTÂNCIAS DE MEMÓRIA
--- ==========================================
+-- Limpeza de instâncias órfãs na memória
 pcall(function()
     if PlayerGui:FindFirstChild("YtDevsProMax") then PlayerGui.YtDevsProMax:Destroy() end
     if game:GetService("CoreGui"):FindFirstChild("YtDevsProMax") then game:GetService("CoreGui").YtDevsProMax:Destroy() end
-    if game:GetService("CoreGui"):FindFirstChild("YtDevsMobileCtrl") then game:GetService("CoreGui").YtDevsMobileCtrl:Destroy() end
     if PlayerGui:FindFirstChild("YtDevsMobileCtrl") then PlayerGui.YtDevsMobileCtrl:Destroy() end
+    if game:GetService("CoreGui"):FindFirstChild("YtDevsMobileCtrl") then game:GetService("CoreGui").YtDevsMobileCtrl:Destroy() end
 end)
 
--- Estados de Controle Globais
 local state = {
     freecam = false,
     camLock = false,
@@ -52,7 +49,6 @@ local origLighting = {
     Brightness = Lighting.Brightness
 }
 
--- Efeitos Visuais Pré-Injetados
 local colorCorrection = Instance.new("ColorCorrectionEffect")
 local depthOfField = Instance.new("DepthOfFieldEffect")
 local bloom = Instance.new("BloomEffect")
@@ -62,17 +58,23 @@ colorCorrection.Parent = Lighting; depthOfField.Parent = Lighting; bloom.Parent 
 local targetCFrame = Camera.CFrame
 
 -- ==========================================
--- [2] MOTOR DE CONSTRUÇÃO ANTI-FALHAS (UI)
+-- [1] MOTOR DE CONSTRUÇÃO INDEPENDENTE DE ORDEM
 -- ==========================================
 local function create(className, properties)
     local instance = Instance.new(className)
+    local parent = properties.Parent
+    properties.Parent = nil -- Força o parentesco a ser executado por último
+    
     for prop, val in pairs(properties) do
         instance[prop] = val
+    end
+    
+    if parent then
+        instance.Parent = parent
     end
     return instance
 end
 
--- Sistema de arrastar janelas otimizado para Touchscreen
 local function makeDraggable(frame, handle)
     handle = handle or frame
     local dragging, dragInput, dragStart, startPos
@@ -82,7 +84,6 @@ local function makeDraggable(frame, handle)
             dragging = true
             dragStart = input.Position
             startPos = frame.Position
-            
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then dragging = false end
             end)
@@ -107,7 +108,7 @@ local function makeDraggable(frame, handle)
 end
 
 -- ==========================================
--- [3] CRIAÇÃO DA INTERFACE DO USUÁRIO
+-- [2] CRIAÇÃO DA INTERFACE VISUAL (UI)
 -- ==========================================
 local Screen = create("ScreenGui", {
     Name = "YtDevsProMax",
@@ -115,35 +116,34 @@ local Screen = create("ScreenGui", {
     Parent = PlayerGui
 })
 
--- Frame Principal Dimensionado para Todas as Funções
+-- Janela Principal com tamanho fixo estável
 local Main = create("Frame", {
     Name = "MainFrame",
-    Size = UDim2.new(0, 290, 0, 490),
-    Position = UDim2.new(0.5, -145, 0.2, 0),
+    Size = UDim2.new(0, 280, 0, 440),
+    Position = UDim2.new(0.5, -140, 0.2, 0),
     BackgroundColor3 = Color3.fromRGB(20, 20, 25),
     ZIndex = 1,
     Parent = Screen
 })
-create("UICorner", { CornerRadius = UDim.new(0, 10), Parent = Main })
+create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = Main })
 create("UIStroke", { Color = Color3.fromRGB(255, 255, 255), Width = 1.5, Parent = Main })
 
 local Title = create("TextLabel", {
-    Size = UDim2.new(1, 0, 0, 40),
-    Text = "YTDEVS CINEMATIC PRO MAX",
+    Size = UDim2.new(0, 280, 0, 40),
+    Text = "YTDEVS CINEMATIC HUB PRO",
     TextColor3 = Color3.new(1, 1, 1),
     Font = Enum.Font.GothamBold,
     TextSize = 13,
-    BackgroundColor3 = Color3.fromRGB(35, 35, 40),
+    BackgroundColor3 = Color3.fromRGB(32, 32, 38),
     ZIndex = 2,
     Parent = Main
 })
-create("UICorner", { CornerRadius = UDim.new(0, 10), Parent = Title })
+create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = Title })
 makeDraggable(Main, Title)
 
--- Botões do Canto Superior
 local MinBtn = create("TextButton", {
     Size = UDim2.new(0, 35, 0, 40),
-    Position = UDim2.new(1, -75, 0, 0),
+    Position = UDim2.new(0, 210, 0, 0),
     Text = "—",
     TextColor3 = Color3.fromRGB(220, 220, 220),
     Font = Enum.Font.GothamBold,
@@ -155,7 +155,7 @@ local MinBtn = create("TextButton", {
 
 local CloseBtn = create("TextButton", {
     Size = UDim2.new(0, 35, 0, 40),
-    Position = UDim2.new(1, -40, 0, 0),
+    Position = UDim2.new(0, 245, 0, 0),
     Text = "✕",
     TextColor3 = Color3.fromRGB(255, 70, 70),
     Font = Enum.Font.GothamBold,
@@ -165,7 +165,6 @@ local CloseBtn = create("TextButton", {
     Parent = Main
 })
 
--- Ícone Flutuante Compacto para Desminimização
 local FloatingBtn = create("TextButton", {
     Size = UDim2.new(0, 55, 0, 55),
     Position = UDim2.new(0.05, 0, 0.25, 0),
@@ -194,11 +193,16 @@ FloatingBtn.MouseButton1Click:Connect(function()
     Main.Visible = true
 end)
 
--- Container dos Botões
-local Container = create("Frame", {
-    Size = UDim2.new(1, 0, 1, -45),
+-- Container em ScrollingFrame para impedir quebra de layout no Mobile
+local Container = create("ScrollingFrame", {
+    Size = UDim2.new(0, 280, 0, 390),
     Position = UDim2.new(0, 0, 0, 45),
     BackgroundTransparency = 1,
+    BorderSizePixel = 0,
+    ScrollBarThickness = 3,
+    ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255),
+    CanvasSize = UDim2.new(0, 0, 0, 0),
+    AutomaticCanvasSize = Enum.AutomaticSize.Y,
     ZIndex = 2,
     Parent = Main
 })
@@ -210,11 +214,13 @@ create("UIListLayout", {
     Parent = Container
 })
 
--- Helper de Controladores Numéricos (Velocidade / FOV)
+-- ==========================================
+-- [3] GERADORES DE ELEMENTOS INTERNOS (OFFSET FIXO)
+-- ==========================================
 local function createAdjuster(name, initialVal, minVal, maxVal, step, onUpdate)
     local current = initialVal
     local frame = create("Frame", {
-        Size = UDim2.new(1, -24, 0, 38),
+        Size = UDim2.new(0, 256, 0, 38),
         BackgroundColor3 = Color3.fromRGB(28, 28, 33),
         ZIndex = 3,
         Parent = Container
@@ -222,8 +228,8 @@ local function createAdjuster(name, initialVal, minVal, maxVal, step, onUpdate)
     create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = frame })
 
     local lbl = create("TextLabel", {
-        Size = UDim2.new(0, 140, 1, 0),
-        Position = UDim2.new(0, 12, 0, 0),
+        Size = UDim2.new(0, 140, 0, 38),
+        Position = UDim2.new(0, 10, 0, 0),
         Text = name .. ": " .. current,
         TextColor3 = Color3.new(1, 1, 1),
         Font = Enum.Font.GothamBold,
@@ -236,10 +242,12 @@ local function createAdjuster(name, initialVal, minVal, maxVal, step, onUpdate)
 
     local minus = create("TextButton", {
         Size = UDim2.new(0, 32, 0, 28),
-        Position = UDim2.new(1, -74, 0, 5),
+        Position = UDim2.new(0, 180, 0, 5),
         Text = "◀",
-        BackgroundColor3 = Color3.fromRGB(40, 40, 45),
+        BackgroundColor3 = Color3.fromRGB(42, 42, 48),
         TextColor3 = Color3.fromRGB(255, 255, 255),
+        Font = Enum.Font.GothamBold,
+        TextSize = 10,
         ZIndex = 4,
         Parent = frame
     })
@@ -247,10 +255,12 @@ local function createAdjuster(name, initialVal, minVal, maxVal, step, onUpdate)
 
     local plus = create("TextButton", {
         Size = UDim2.new(0, 32, 0, 28),
-        Position = UDim2.new(1, -38, 0, 5),
+        Position = UDim2.new(0, 216, 0, 5),
         Text = "▶",
-        BackgroundColor3 = Color3.fromRGB(40, 40, 45),
+        BackgroundColor3 = Color3.fromRGB(42, 42, 48),
         TextColor3 = Color3.fromRGB(255, 255, 255),
+        Font = Enum.Font.GothamBold,
+        TextSize = 10,
         ZIndex = 4,
         Parent = frame
     })
@@ -269,19 +279,14 @@ local function createAdjuster(name, initialVal, minVal, maxVal, step, onUpdate)
     end)
 end
 
--- Instanciando Ajustadores
-createAdjuster("Velocidade Drone", state.speed, 5, 160, 5, function(v) state.speed = v end)
-createAdjuster("Lente Lupa (FOV)", state.fov, 10, 120, 5, function(v) state.fov = v if state.freecam then Camera.FieldOfView = v end end)
-
--- Helper de Geração de Botões Simples
 local function createBtn(text, color)
     local btn = create("TextButton", {
-        Size = UDim2.new(1, -24, 0, 40),
+        Size = UDim2.new(0, 256, 0, 40),
         Text = text,
         BackgroundColor3 = color,
         TextColor3 = Color3.new(1, 1, 1),
         Font = Enum.Font.GothamBold,
-        TextSize = 12,
+        TextSize = 11,
         ZIndex = 3,
         Parent = Container
     })
@@ -289,15 +294,19 @@ local function createBtn(text, color)
     return btn
 end
 
-local BtnFreeCam = createBtn("FREE CAM (ATIVAR DRONE)", Color3.fromRGB(45, 45, 50))
-local BtnCamLock = createBtn("CAM LOCK (TRAVAR CÂMERA)", Color3.fromRGB(45, 45, 50))
+-- Inicialização Segura dos Componentes internos
+createAdjuster("Velocidade Drone", state.speed, 5, 160, 5, function(v) state.speed = v end)
+createAdjuster("Lente Lupa (FOV)", state.fov, 10, 120, 5, function(v) state.fov = v if state.freecam then Camera.FieldOfView = v end end)
+
+local BtnFreeCam = createBtn("FREE CAM (ATIVAR DRONE)", Color3.fromRGB(46, 46, 52))
+local BtnCamLock = createBtn("CAM LOCK (TRAVAR CÂMERA)", Color3.fromRGB(46, 46, 52))
 local BtnGreen   = createBtn("SPAWNAR TELA VERDE CHROMA", Color3.fromRGB(0, 135, 60))
 local BtnHide    = createBtn("OCULTAR TODOS JOGADORES", Color3.fromRGB(150, 0, 35))
 local BtnClone   = createBtn("GERAR CLONE DE ATOR", Color3.fromRGB(110, 30, 150))
-local BtnUltra   = createBtn("FILTRO CINEMATIC ULTRA (OFF)", Color3.fromRGB(55, 55, 60))
+local BtnUltra   = createBtn("FILTRO CINEMATIC ULTRA (OFF)", Color3.fromRGB(56, 56, 62))
 
 -- ==========================================
--- [4] INTERFACE ISOLADA MOBILE CONTROLS
+-- [4] CONTROLES VIRTUAIS DO ANALÓGICO MOBILE
 -- ==========================================
 local MobileGui = create("ScreenGui", {
     Name = "YtDevsMobileCtrl",
@@ -308,7 +317,7 @@ local MobileGui = create("ScreenGui", {
 
 local JoyBase = create("Frame", {
     Size = UDim2.new(0, 110, 0, 110),
-    Position = UDim2.new(0.08, 0, 0.62, 0),
+    Position = UDim2.new(0.08, 0, 0.60, 0),
     BackgroundColor3 = Color3.fromRGB(0, 0, 0),
     BackgroundTransparency = 0.5,
     Parent = MobileGui
@@ -342,8 +351,8 @@ local function createAltBtn(txt, pos)
     return b
 end
 
-local BtnUp = createAltBtn("▲", UDim2.new(0.86, 0, 0.5, -70))
-local BtnDown = createAltBtn("▼", UDim2.new(0.86, 0, 0.5, 10))
+local BtnUp = createAltBtn("▲", UDim2.new(0.86, 0, 0.48, -70))
+local BtnDown = createAltBtn("▼", UDim2.new(0.86, 0, 0.48, 10))
 
 BtnUp.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then state.flyUp = true end end)
 BtnUp.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then state.flyUp = false end end)
@@ -357,7 +366,7 @@ JoyBase.InputBegan:Connect(function(input)
     end
 end)
 
--- Processamento de Touchscreen (Analógico Esquerdo + Olhar Esférico 360 Direito)
+-- Rotação Livre Calibrada 360° em todas as direções
 UIS.InputChanged:Connect(function(input)
     if input == state.dragInput then
         local delta = Vector2.new(input.Position.X, input.Position.Y) - state.dragStart
@@ -365,11 +374,11 @@ UIS.InputChanged:Connect(function(input)
         JoyStick.Position = UDim2.new(0.5, -22 + delta.X, 0.5, -22 + delta.Y)
         state.moveVector = Vector3.new(delta.X / 45, 0, delta.Y / 45)
     elseif state.freecam and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) and input ~= state.dragInput then
-        -- Permite giro 360 completo em qualquer eixo sem nós gráficos
+        -- Multiplicador ajustado para fluidez esférica perfeita no touch
         state.yaw = state.yaw - (input.Delta.X * 0.0075)
         state.pitch = state.pitch - (input.Delta.Y * 0.0075)
         
-        -- Clamping seguro em 89.9 graus para evitar a inversão de tela e quebra da câmera do Roblox
+        -- Clamping seguro em 89.9° para evitar inversão ou travamento de polo da câmera
         state.pitch = math.clamp(state.pitch, -math.rad(89.9), math.rad(89.9))
     end
 end)
@@ -383,7 +392,7 @@ UIS.InputEnded:Connect(function(input)
 end)
 
 -- ==========================================
--- [5] LÓGICA DE GERENCIAMENTO CINEMATOGRÁFICO
+-- [5] CORE LOGIC & CORE FUNCIONALIDADES
 -- ==========================================
 local function setCinematicHUD(disabled)
     local visibility = not disabled
@@ -421,7 +430,7 @@ Players.PlayerAdded:Connect(function(p)
 end)
 
 -- ==========================================
--- [6] ACIONADORES DOS BOTÕES (TRIGGERS)
+-- [6] ACIONAMENTO INTERATIVO DOS BOTÕES
 -- ==========================================
 BtnFreeCam.MouseButton1Click:Connect(function()
     state.freecam = not state.freecam
@@ -431,13 +440,13 @@ BtnFreeCam.MouseButton1Click:Connect(function()
 
     if state.freecam then
         state.camLock = false
-        BtnCamLock.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+        BtnCamLock.BackgroundColor3 = Color3.fromRGB(46, 46, 52)
         BtnFreeCam.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
         local x, y, z = Camera.CFrame:ToEulerAnglesYXZ()
         state.yaw, state.pitch = y, x
         targetCFrame = Camera.CFrame
     else
-        BtnFreeCam.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+        BtnFreeCam.BackgroundColor3 = Color3.fromRGB(46, 46, 52)
         Camera.CameraType = Enum.CameraType.Custom
     end
 end)
@@ -447,14 +456,14 @@ BtnCamLock.MouseButton1Click:Connect(function()
     if state.camLock then
         if state.freecam then
             state.freecam = false
-            BtnFreeCam.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+            BtnFreeCam.BackgroundColor3 = Color3.fromRGB(46, 46, 52)
             MobileGui.Enabled = false
             setCharacterFrozen(false)
         end
         BtnCamLock.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
         state.lockedCFrame = Camera.CFrame
     else
-        BtnCamLock.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+        BtnCamLock.BackgroundColor3 = Color3.fromRGB(46, 46, 52)
         state.lockedCFrame = nil
         Camera.CameraType = Enum.CameraType.Custom
     end
@@ -524,7 +533,7 @@ BtnUltra.MouseButton1Click:Connect(function()
         bloom.Size = 22
         bloom.Enabled = true
     else
-        BtnUltra.BackgroundColor3 = Color3.fromRGB(55, 55, 60)
+        BtnUltra.BackgroundColor3 = Color3.fromRGB(56, 56, 62)
         BtnUltra.Text = "FILTRO CINEMATIC ULTRA (OFF)"
         Lighting.Ambient = origLighting.Ambient
         Lighting.OutdoorAmbient = origLighting.OutdoorAmbient
@@ -544,7 +553,7 @@ CloseBtn.MouseButton1Click:Connect(function()
     MobileGui:Destroy()
 end)
 
--- Loop Secundário Assíncrono para Trancamento de HUD Cinema
+-- Loop de checagem em paralelo para travar o HUD Cinema ativo
 task.spawn(function()
     while true do
         task.wait(0.3)
@@ -553,13 +562,14 @@ task.spawn(function()
 end)
 
 -- ==========================================
--- [7] LOOP CRÍTICO DE RENDERIZAÇÃO DA CÂMERA
+-- [7] LOOP CRÍTICO DE RENDERIZAÇÃO DE DRONE 360°
 -- ==========================================
 RS.RenderStepped:Connect(function(dt)
     if state.freecam then
         Camera.CameraType = Enum.CameraType.Scriptable
         Camera.FieldOfView = state.fov
         
+        -- Matriz de rotação esférica 360 completa e limpa
         local lookCF = CFrame.Angles(0, state.yaw, 0) * CFrame.Angles(state.pitch, 0, 0)
         local moveDir = Vector3.new(0, 0, 0)
         
