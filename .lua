@@ -1,5 +1,5 @@
---[[
-    YTDEVS - FREE CAM CINEMATIC PRO (SISTEMA UNIFICADO DE GRAVAÇÃO)
+here--[[
+    YTDEVS - FREE CAM CINEMATIC PRO (SISTEMA UNIFICADO CORRIGIDO)
     - Menu Principal Otimizado com Scrolling Frame (Painel de Rolagem)
     - Drone Glide (Movimentação e Rotação 360° com Suavização Lerp)
     - Modo Cinema Automático e Gerador de Tela Verde (Chroma Key)
@@ -60,7 +60,7 @@ local frameDistance = 14
 function shared.setCharacterFrozen(frozen)
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then 
-        char.HumanoidRootPart.Ancuted = frozen 
+        char.HumanoidRootPart.Anchored = frozen 
     end
 end
 
@@ -150,7 +150,7 @@ MinCircle.InputBegan:Connect(function(input)
 end)
 
 -- =============================================================================
--- [4] CONSTRUÇÃO DO PAINEL DE ROLAGEM (SCROLLING FRAME)
+-- [4] CONSTRUÇÃO DO PAINEL DE ROLAGEM (CORRIGIDO)
 -- =============================================================================
 local ScrollFrame = Instance.new("ScrollingFrame", Main)
 ScrollFrame.Name = "Container"
@@ -636,4 +636,4 @@ FramingBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-print("Script unificado carregado com sucesso para o GitHub!")
+print("Script unificado e corrigido com sucesso!")
