@@ -1,6 +1,6 @@
---[[
-    YTDEVS - FREE CAM CINEMATIC PRO (VERSÃO MOBILE ESTÁVEL FIX)
-    - Menu Principal com Ordem Sequencial Estrita (Sem caixa preta)
+here--[[
+    YTDEVS - FREE CAM CINEMATIC PRO (FORCED CANVAS RESIZE)
+    - Menu com área de Canvas pré-calculada para evitar colapso no Mobile
     - Drone Glide (Movimentação e Rotação 360° com Suavização Lerp)
     - Modo Cinema Automático e Gerador de Tela Verde (Chroma Key)
     - Ferramentas de Cenário: Ocultar Jogadores, Clone de Atores e Filtro Ultra
@@ -150,9 +150,9 @@ MinCircle.InputBegan:Connect(function(input)
 end)
 
 -- =============================================================================
--- [4] CONSTRUÇÃO SEQUENCIAL DO PAINEL DE ROLAGEM (CORREÇÃO MOBILE)
+-- [4] CONSTRUÇÃO FORÇADA DO PAINEL DE ROLAGEM
 -- =============================================================================
-local ScrollFrame = Instance.new("ScrollingFrame")
+local ScrollFrame = Instance.new("ScrollingFrame", Main)
 ScrollFrame.Name = "Container"
 ScrollFrame.Size = UDim2.new(1, 0, 1, -40)
 ScrollFrame.Position = UDim2.new(0, 0, 0, 40)
@@ -160,23 +160,20 @@ ScrollFrame.BackgroundTransparency = 1
 ScrollFrame.BorderSizePixel = 0
 ScrollFrame.ScrollBarThickness = 5
 ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(120, 120, 125)
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-ScrollFrame.AutomaticCanvasSize = Enum.AutomaticCanvasSize.Y
-ScrollFrame.Parent = Main -- Atribuído o pai estritamente antes de injetar filhos
+-- Mudança crucial: Força uma altura de rolagem física de 600 pixels para evitar colapso mobile
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 600) 
 
-local ListLayout = Instance.new("UIListLayout")
+local ListLayout = Instance.new("UIListLayout", ScrollFrame)
 ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 ListLayout.Padding = UDim.new(0, 8)
 ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-ListLayout.Parent = ScrollFrame
 
-local UIPadding = Instance.new("UIPadding")
+local UIPadding = Instance.new("UIPadding", ScrollFrame)
 UIPadding.PaddingTop = UDim.new(0, 8)
 UIPadding.PaddingBottom = UDim.new(0, 15)
-UIPadding.Parent = ScrollFrame
 
 -- =============================================================================
--- [5] INJEÇÃO DE ELEMENTOS INTERNOS (ORDEM DE LAYOUT GARANTIDA)
+-- [5] ADICIONANDO COMPONENTES
 -- =============================================================================
 local SpeedFrame = Instance.new("Frame", ScrollFrame)
 SpeedFrame.Size = UDim2.new(1, -30, 0, 40)
@@ -259,7 +256,7 @@ FOVPlus.MouseButton1Click:Connect(function()
 end)
 
 local function createScrollBtn(text, color)
-    local btn = Instance.new("TextButton")
+    local btn = Instance.new("TextButton", ScrollFrame)
     btn.Size = UDim2.new(1, -30, 0, 45)
     btn.Text = text
     btn.BackgroundColor3 = color
@@ -267,7 +264,6 @@ local function createScrollBtn(text, color)
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 13
     Instance.new("UICorner", btn)
-    btn.Parent = ScrollFrame -- Vinculado após a criação isolada do objeto
     return btn
 end
 
@@ -283,7 +279,7 @@ local DronePhysBtn = createScrollBtn("IA: DRONE PHYSICS (OFF)", Color3.fromRGB(0
 local FramingBtn = createScrollBtn("IA: ENQUADRAMENTO DE FOCO (OFF)", Color3.fromRGB(0, 50, 120))
 
 -- =============================================================================
--- [6] LÓGICA DE FUNCIONAMENTO DOS BOTÕES EXTRAS (CENÁRIOS E FILTROS)
+-- [6] RECURSOS EXTRAS
 -- =============================================================================
 GreenBtn.MouseButton1Click:Connect(function()
     local char = LocalPlayer.Character
@@ -377,7 +373,7 @@ LightBtn.MouseButton1Click:Connect(function()
 end)
 
 -- =============================================================================
--- [7] INTERFACE DE CONTROLES EXCLUSIVA MOBILE
+-- [7] CONTROLES MOBILE
 -- =============================================================================
 shared.MobileControls = Instance.new("ScreenGui", CoreGui)
 shared.MobileControls.Name = "YtDevsMobileControls"
@@ -475,7 +471,7 @@ FOVText.TextXAlignment = Enum.TextXAlignment.Left
 FOVText.BackgroundTransparency = 1
 
 -- =============================================================================
--- [8] LOOP FÍSICO DA CÂMERA E INTEGRAÇÃO DE INTELIGÊNCIA ARTIFICIAL (IA)
+-- [8] LOOP FÍSICO E RENDERSTEPPED
 -- =============================================================================
 task.spawn(function()
     while true do
@@ -493,7 +489,6 @@ RS.RenderStepped:Connect(function(delta)
         Camera.CameraType = Enum.CameraType.Scriptable
         Camera.FieldOfView = shared.cameraFOV
         
-        -- IA: Diretor de Corte
         if aiDirectorActive and hrp and humanoid then
             local velocity = hrp.AssemblyLinearVelocity.Magnitude
             if velocity < 1 and lastAction ~= "Idle" then
@@ -528,7 +523,6 @@ RS.RenderStepped:Connect(function(delta)
         Camera.CFrame = Camera.CFrame:Lerp(nextCFrame, glideWeight)
         targetCameraCFrame = nextCFrame
         
-        -- IA: Drone Physics (Efeito Roll)
         if aiDronePhysicsActive then
             if shared.moveInputVector.X ~= 0 then
                 local targetRoll = -math.rad(8) * shared.moveInputVector.X
@@ -569,7 +563,7 @@ RS.RenderStepped:Connect(function(delta)
 end)
 
 -- =============================================================================
--- [9] GATILHOS E COMPORTAMENTO DE ATIVAÇÃO DOS MODOS
+-- [9] GATILHOS DE ATIVAÇÃO
 -- =============================================================================
 local function toggleFreeCam(on)
     shared.FreeCamActive = on
@@ -640,4 +634,4 @@ FramingBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-print("YTDEVS HUB: Carregado perfeitamente com renderização mobile garantida!")
+print("YTDEVS HUB: Inicializado com Canvas físico adaptativo!")
