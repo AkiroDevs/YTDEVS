@@ -428,4 +428,208 @@ end
 shared.FreeCamBtn.MouseButton1Click:Connect(function() toggleFreeCam(not shared.FreeCamActive) end)
 shared.CamLockBtn.MouseButton1Click:Connect(function() toggleCamLock(not shared.CamLockActive) end)
 
-print("Parte 2 carregada! Ferramenta pronta para uso.")
+print("Parte 2 carregada! Ferramenta pronta para uso.")--[[
+    YTDEVS - FREE CAM CINEMATIC PRO (PARTE 3)
+    - Modo Anti-Penetras (Jogadores Invisíveis)
+    - Clone de Ator Estático para Gravações
+    - Filtro Gráfico "PC no Ultra" (Iluminação de Cinema)
+    - HUD de Dados Cinematográficos (Velocidade e FOV na tela)
+]]
+
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local RS = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local Main = shared.Screen:FindFirstChild("Main")
+
+if not Main then 
+    warn("Erro: Execute a Parte 1 antes de carregar a Parte 3!")
+    return 
+end
+
+-- Aumenta o tamanho da janela principal para caber os novos recursos
+Main.Size = UDim2.new(0, 280, 0, 520)
+
+-- Estados das novas funções
+local playersHidden = false
+local originalLightingSettings = {}
+local cinematicLightingActive = false
+local currentClone = nil
+
+-- Função Auxiliar para Criar Botões Padronizados
+local function createNewBtn(text, pos, color)
+    local btn = Instance.new("TextButton", Main)
+    btn.Size = UDim2.new(1, -40, 0, 40)
+    btn.Position = pos
+    btn.Text = text
+    btn.BackgroundColor3 = color
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 12
+    Instance.new("UICorner", btn)
+    return btn
+end
+
+-- ================== 1. BOTÃO ANTI-PENETRAS (OCULTAR JOGADORES) ==================
+local AntiSnipeBtn = createNewBtn("OCULTAR OUTROS JOGADORES", UDim2.new(0, 20, 0, 295), Color3.fromRGB(130, 0, 0))
+
+local function togglePlayersVisibility(hide)
+    playersHidden = hide
+    AntiSnipeBtn.BackgroundColor3 = hide and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(130, 0, 0)
+    AntiSnipeBtn.Text = hide and "JOGADORES OCULTADOS" or "OCULTAR OUTROS JOGADORES"
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            for _, part in pairs(player.Character:GetDescendants()) do
+                if part:IsA("BasePart") or part:IsA("Decal") then
+                    if not part:GetAttribute("OriginalTransparency") then
+                        part:SetAttribute("OriginalTransparency", part.Transparency)
+                    end
+                    part.Transparency = hide and 1 or part:GetAttribute("OriginalTransparency")
+                end
+            end
+        end
+    end
+end
+
+AntiSnipeBtn.MouseButton1Click:Connect(function()
+    togglePlayersVisibility(not playersHidden)
+end)
+
+-- Garante que novos jogadores que entrarem também fiquem invisíveis se o modo estiver ativo
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function(char)
+        if playersHidden then
+            task.wait(0.5)
+            for _, part in pairs(char:GetDescendants()) do
+                if part:IsA("BasePart") or part:IsA("Decal") then
+                    part.Transparency = 1
+                end
+            end
+        end
+    end)
+end)
+
+-- ================== 2. BOTÃO CLONE DE ATOR ==================
+local CloneBtn = createNewBtn("GERAR CLONE (ATOR)", UDim2.new(0, 20, 0, 345), Color3.fromRGB(70, 0, 150))
+
+CloneBtn.MouseButton1Click:Connect(function()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        if currentClone then currentClone:Destroy() end
+        
+        -- Configura o boneco clonado
+        char.Archivable = true
+        currentClone = char:Clone()
+        char.Archivable = false
+        
+        currentClone.Parent = workspace
+        currentClone:MoveTo(char.HumanoidRootPart.Position)
+        
+        -- Congela o clone para ele não cair ou sumir
+        for _, part in pairs(currentClone:GetDescendants()) do
+            if part:IsA("BasePart") then part.Anchored = true end
+            if part:IsA("LocalScript") or part:IsA("Script") then part:Destroy() end
+        end
+        
+        CloneBtn.Text = "CLONE GERADO! (CLIQUE P/ LIMPAR)"
+        CloneBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+    else
+        if currentClone then
+            currentClone:Destroy()
+            currentClone = nil
+            CloneBtn.Text = "GERAR CLONE (ATOR)"
+            CloneBtn.BackgroundColor3 = Color3.fromRGB(70, 0, 150)
+        end
+    end
+end)
+
+-- ================== 3. BOTÃO ILUMINAÇÃO DE CINEMA ==================
+local LightBtn = createNewBtn("FILTRO: GRÁFICOS NO ULTRA", UDim2.new(0, 20, 0, 395), Color3.fromRGB(45, 45, 50))
+
+-- Salva os dados originais do mapa para não estragar o jogo original ao desligar
+originalLightingSettings.Ambient = Lighting.Ambient
+originalLightingSettings.OutdoorAmbient = Lighting.OutdoorAmbient
+originalLightingSettings.Brightness = Lighting.Brightness
+
+local colorCorrection = Instance.new("ColorCorrectionEffect")
+local depthOfField = Instance.new("DepthOfFieldEffect")
+depthOfField.Enabled = false
+colorCorrection.Enabled = false
+colorCorrection.Parent = Lighting
+depthOfField.Parent = Lighting
+
+LightBtn.MouseButton1Click:Connect(function()
+    cinematicLightingActive = not cinematicLightingActive
+    
+    if cinematicLightingActive then
+        LightBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+        LightBtn.Text = "FILTRO CINEMA: ATIVADO"
+        
+        -- Modificações visuais de atmosfera cinematográfica
+        Lighting.Ambient = Color3.fromRGB(140, 140, 150)
+        Lighting.Brightness = 2.5
+        
+        colorCorrection.Saturation = 0.25
+        colorCorrection.Contrast = 0.15
+        colorCorrection.Enabled = true
+        
+        depthOfField.FarIntensity = 0.8
+        depthOfField.FocusDistance = 15
+        depthOfField.InFocusRadius = 20
+        depthOfField.Enabled = true
+    else
+        LightBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+        LightBtn.Text = "FILTRO: GRÁFICOS NO ULTRA"
+        
+        -- Restaura o padrão do mapa
+        Lighting.Ambient = originalLightingSettings.Ambient
+        Lighting.OutdoorAmbient = originalLightingSettings.OutdoorAmbient
+        Lighting.Brightness = originalLightingSettings.Brightness
+        colorCorrection.Enabled = false
+        depthOfField.Enabled = false
+    end
+end)
+
+-- ================== 4. PAINEL DE DADOS CINEMATOGRÁFICOS ==================
+local DataHUD = Instance.new("Frame", shared.MobileControls)
+DataHUD.Size = UDim2.new(0, 160, 0, 50)
+DataHUD.Position = UDim2.new(0.02, 0, 0.02, 0)
+DataHUD.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+DataHUD.BackgroundTransparency = 0.6
+Instance.new("UICorner", DataHUD)
+Instance.new("UIStroke", DataHUD).Color = Color3.new(1, 1, 1)
+
+local SpeedText = Instance.new("TextLabel", DataHUD)
+SpeedText.Size = UDim2.new(1, -10, 0, 25)
+SpeedText.Position = UDim2.new(0, 10, 0, 0)
+SpeedText.Text = "VELOCIDADE: 20 ST/S"
+SpeedText.TextColor3 = Color3.new(1, 1, 0)
+SpeedText.Font = Enum.Font.Code
+SpeedText.TextSize = 12
+SpeedText.TextXAlignment = Enum.TextXAlignment.Left
+SpeedText.BackgroundTransparency = 1
+
+local FOVText = Instance.new("TextLabel", DataHUD)
+FOVText.Size = UDim2.new(1, -10, 0, 25)
+FOVText.Position = UDim2.new(0, 10, 0, 20)
+FOVText.Text = "LENTE (FOV): 70°"
+FOVText.TextColor3 = Color3.new(0, 1, 1)
+FOVText.Font = Enum.Font.Code
+FOVText.TextSize = 12
+FOVText.TextXAlignment = Enum.TextXAlignment.Left
+FOVText.BackgroundTransparency = 1
+
+-- Atualiza as informações do painel em tempo real
+RS.RenderStepped:Connect(function()
+    if shared.FreeCamActive then
+        DataHUD.Visible = true
+        SpeedText.Text = "VELOCIDADE: " .. shared.moveSpeed .. " ST/S"
+        FOVText.Text = "LENTE (FOV): " .. shared.cameraFOV .. "°"
+    else
+        DataHUD.Visible = false
+    end
+end)
+
+print("Parte 3 instalada com sucesso! O estúdio mobile de cinema está completo.")
