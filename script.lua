@@ -1,9 +1,9 @@
-here--[[
-    YTDEVS - FREE CAM CINEMATIC PRO (SISTEMA UNIFICADO CORRIGIDO)
-    - Menu Principal Otimizado com Scrolling Frame (Painel de Rolagem)
+--[[
+    YTDEVS - FREE CAM CINEMATIC PRO (SISTEMA UNIFICADO 100% CORRIGIDO)
+    - Menu Principal com Painel de Rolagem Seguro para Mobile
     - Drone Glide (Movimentação e Rotação 360° com Suavização Lerp)
     - Modo Cinema Automático e Gerador de Tela Verde (Chroma Key)
-    - Ferramentas de Cenário: Ocultar Jogadores, Clone de Atores e Filtro "PC no Ultra"
+    - Ferramentas de Cenário: Ocultar Jogadores, Clone de Atores e Filtro Ultra
     - Módulos IA: Diretor de Corte, Drone Physics (Roll) e Enquadramento de Foco
 ]]
 
@@ -55,7 +55,7 @@ local currentRoll = 0
 local frameDistance = 14
 
 -- =============================================================================
--- [2] FUNÇÕES AUXILIARES DE CORES, SISTEMA E ARRASTE
+-- [2] FUNÇÕES AUXILIARES E ARRASTE DA INTERFACE
 -- =============================================================================
 function shared.setCharacterFrozen(frozen)
     local char = LocalPlayer.Character
@@ -150,16 +150,16 @@ MinCircle.InputBegan:Connect(function(input)
 end)
 
 -- =============================================================================
--- [4] CONSTRUÇÃO DO PAINEL DE ROLAGEM (CORRIGIDO)
+-- [4] CONSTRUÇÃO DO PAINEL DE ROLAGEM CORRIGIDO (SCROLLING FRAME)
 -- =============================================================================
 local ScrollFrame = Instance.new("ScrollingFrame", Main)
 ScrollFrame.Name = "Container"
-ScrollFrame.Size = UDim2.new(1, 0, 1, -45)
-ScrollFrame.Position = UDim2.new(0, 0, 0, 45)
+ScrollFrame.Size = UDim2.new(1, 0, 1, -40)
+ScrollFrame.Position = UDim2.new(0, 0, 0, 40)
 ScrollFrame.BackgroundTransparency = 1
 ScrollFrame.BorderSizePixel = 0
-ScrollFrame.ScrollBarThickness = 4
-ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 105)
+ScrollFrame.ScrollBarThickness = 5
+ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(120, 120, 125)
 ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 ScrollFrame.AutomaticCanvasSize = Enum.AutomaticCanvasSize.Y
 
@@ -169,8 +169,8 @@ ListLayout.Padding = UDim.new(0, 8)
 ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local UIPadding = Instance.new("UIPadding", ScrollFrame)
-UIPadding.PaddingTop = UDim.new(0, 5)
-UIPadding.PaddingBottom = UDim.new(0, 10)
+UIPadding.PaddingTop = UDim.new(0, 8)
+UIPadding.PaddingBottom = UDim.new(0, 15)
 
 -- =============================================================================
 -- [5] INJEÇÃO DE RECURSOS E BOTÕES DE CONTROLE
@@ -373,7 +373,7 @@ LightBtn.MouseButton1Click:Connect(function()
 end)
 
 -- =============================================================================
--- [7] INTERFACE DE CONTROLES EXCLUSIVA MOBILE (ANALÓGICO E PAINEL DE DADOS)
+-- [7] INTERFACE DE CONTROLES EXCLUSIVA MOBILE
 -- =============================================================================
 shared.MobileControls = Instance.new("ScreenGui", CoreGui)
 shared.MobileControls.Name = "YtDevsMobileControls"
@@ -636,4 +636,4 @@ FramingBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-print("Script unificado e corrigido com sucesso!")
+print("YTDEVS HUB: Carregado perfeitamente via nuvem!")
