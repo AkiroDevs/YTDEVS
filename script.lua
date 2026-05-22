@@ -1,27 +1,28 @@
 --[[
-    YTDEVS - CINEMATIC HUB PRO MAX (REVISÃO ULTRA COMPLETA)
-    - Otimização Total: Substituído loops pesados por escutas de eventos nativos (0% Lag)
-    - Suavização Drone: Lerp baseado em DeltaTime (independente se o celular roda a 30 ou 60 FPS)
-    - Fix de Bugs: Clone via PivotTo (precisão cirúrgica) e persistência de invisibilidade
-    - Interface: Sistema de colapso por clique e minimização 100% estável
+    YTDEVS - CINEMATIC HUB PRO MAX (REVISÃO ANTIBUG MOBILE)
+    - Fix de Renderização: Transferido de CoreGui para PlayerGui (Zero Telas Pretas)
+    - Engine Segura: Propriedades carregadas antes do Parentesco para evitar sumiço de UI
+    - Correções: Removidas propriedades inválidas e ajustado o Arraste Mobile Estável
 ]]
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local RS = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
-local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 
 local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local Camera = workspace.CurrentCamera
 
 -- ==========================================
--- [1] LIMPEZA E ESTADOS GLOBAIS
+-- [1] LIMPEZA TOTAL DE VERSÕES ANTERIORES
 -- ==========================================
 pcall(function()
-    if CoreGui:FindFirstChild("YtDevsProMax") then CoreGui.YtDevsProMax:Destroy() end
-    if CoreGui:FindFirstChild("YtDevsMobileCtrl") then CoreGui.YtDevsMobileCtrl:Destroy() end
+    if PlayerGui:FindFirstChild("YtDevsProMax") then PlayerGui.YtDevsProMax:Destroy() end
+    if game:GetService("CoreGui"):FindFirstChild("YtDevsProMax") then game:GetService("CoreGui").YtDevsProMax:Destroy() end
+    if game:GetService("CoreGui"):FindFirstChild("YtDevsMobileCtrl") then game:GetService("CoreGui").YtDevsMobileCtrl:Destroy() end
+    if PlayerGui:FindFirstChild("YtDevsMobileCtrl") then PlayerGui.YtDevsMobileCtrl:Destroy() end
 end)
 
 local state = {
@@ -49,96 +50,141 @@ local origLighting = {
     Brightness = Lighting.Brightness
 }
 
-local colorCorrection = Instance.new("ColorCorrectionEffect", Lighting)
-local depthOfField = Instance.new("DepthOfFieldEffect", Lighting)
-local bloom = Instance.new("BloomEffect", Lighting)
+-- Instanciação limpa dos filtros gráficos máximos
+local colorCorrection = Instance.new("ColorCorrectionEffect")
+local depthOfField = Instance.new("DepthOfFieldEffect")
+local bloom = Instance.new("BloomEffect")
 colorCorrection.Enabled = false
 depthOfField.Enabled = false
 bloom.Enabled = false
+colorCorrection.Parent = Lighting
+depthOfField.Parent = Lighting
+bloom.Parent = Lighting
 
 local targetCFrame = Camera.CFrame
 
 -- ==========================================
--- [2] SISTEMA DE ARRASTE ULTRA RESPONSIVO
+-- [2] HELPER DE CONSTRUÇÃO SEGURA (ANTI-BUG)
 -- ==========================================
-local function makeDraggable(obj)
-    local dragging, sPos, dStart
-    obj.InputBegan:Connect(function(input)
+local function create(className, properties)
+    local instance = Instance.new(className)
+    for prop, val in pairs(properties) do
+        instance[prop] = val
+    end
+    return instance
+end
+
+-- ==========================================
+-- [3] SISTEMA DE ARRASTE ROBUSTO PARA CELULAR
+-- ==========================================
+local function makeDraggable(frame, handle)
+    handle = handle or frame
+    local dragging, dragInput, dragStart, startPos
+
+    handle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
-            dStart = input.Position
-            sPos = obj.Position
+            dragStart = input.Position
+            startPos = frame.Position
+            
             input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
             end)
         end
     end)
-    obj.InputChanged:Connect(function(input)
-        if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and dragging then
-            local delta = input.Position - dStart
-            obj.Position = UDim2.new(sPos.X.Scale, sPos.X.Offset + delta.X, sPos.Y.Scale, sPos.Y.Offset + delta.Y)
+
+    handle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
         end
     end)
 end
 
 -- ==========================================
--- [3] DESIGN E CONSTRUÇÃO DA DESIGN ENGINE
+-- [4] INTERFACE DO USUÁRIO PRINCIPAL (GUI)
 -- ==========================================
-local Screen = Instance.new("ScreenGui", CoreGui)
-Screen.Name = "YtDevsProMax"
-Screen.ResetOnSpawn = false
+local Screen = create("ScreenGui", {
+    Name = "YtDevsProMax",
+    ResetOnSpawn = false,
+    Parent = PlayerGui
+})
 
-local Main = Instance.new("Frame", Screen)
-Main.Size = UDim2.new(0, 280, 0, 430)
-Main.Position = UDim2.new(0.5, -140, 0.25, 0)
-Main.BackgroundColor3 = Color3.fromRGB(13, 13, 16)
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
-local MainStroke = Instance.new("UIStroke", Main)
-MainStroke.Color = Color3.fromRGB(255, 0, 60)
-MainStroke.Width = 2
-makeDraggable(Main)
+local Main = create("Frame", {
+    Name = "MainFrame",
+    Size = UDim2.new(0, 280, 0, 440),
+    Position = UDim2.new(0.5, -140, 0.25, 0),
+    BackgroundColor3 = Color3.fromRGB(15, 15, 18),
+    ZIndex = 1,
+    Parent = Screen
+})
+create("UICorner", { CornerRadius = UDim.new(0, 10), Parent = Main })
+local MainStroke = create("UIStroke", { Color = Color3.fromRGB(255, 0, 60), Width = 2, Parent = Main })
 
-local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.Text = "YTDEVS CINEMATIC PRO MAX"
-Title.TextColor3 = Color3.new(1, 1, 1)
-Title.Font = Enum.Font.GothamBlack
-Title.TextSize = 13
-Title.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
-Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 10)
+local Title = create("TextLabel", {
+    Size = UDim2.new(1, 0, 0, 40),
+    Text = "YTDEVS CINEMATIC PRO MAX",
+    TextColor3 = Color3.new(1, 1, 1),
+    Font = Enum.Font.GothamBold,
+    TextSize = 13,
+    BackgroundColor3 = Color3.fromRGB(25, 25, 30),
+    ZIndex = 2,
+    Parent = Main
+})
+create("UICorner", { CornerRadius = UDim.new(0, 10), Parent = Title })
+makeDraggable(Main, Title)
 
-local MinBtn = Instance.new("TextButton", Main)
-MinBtn.Size = UDim2.new(0, 35, 0, 40)
-MinBtn.Position = UDim2.new(1, -75, 0, 0)
-MinBtn.Text = "—"
-MinBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-MinBtn.Font = Enum.Font.GothamBlack
-MinBtn.TextSize = 14
-MinBtn.BackgroundTransparency = 1
+-- Controles superiores (Minimizar e Fechar)
+local MinBtn = create("TextButton", {
+    Size = UDim2.new(0, 35, 0, 40),
+    Position = UDim2.new(1, -75, 0, 0),
+    Text = "—",
+    TextColor3 = Color3.fromRGB(220, 220, 220),
+    Font = Enum.Font.GothamBold,
+    TextSize = 14,
+    BackgroundTransparency = 1,
+    ZIndex = 3,
+    Parent = Main
+})
 
-local CloseBtn = Instance.new("TextButton", Main)
-CloseBtn.Size = UDim2.new(0, 35, 0, 40)
-CloseBtn.Position = UDim2.new(1, -40, 0, 0)
-CloseBtn.Text = "✕"
-CloseBtn.TextColor3 = Color3.fromRGB(255, 60, 60)
-CloseBtn.Font = Enum.Font.GothamBlack
-CloseBtn.TextSize = 14
-CloseBtn.BackgroundTransparency = 1
-CloseBtn.MouseButton1Click:Connect(function() Screen:Destroy() pcall(function() CoreGui.YtDevsMobileCtrl:Destroy() end) end)
+local CloseBtn = create("TextButton", {
+    Size = UDim2.new(0, 35, 0, 40),
+    Position = UDim2.new(1, -40, 0, 0),
+    Text = "✕",
+    TextColor3 = Color3.fromRGB(255, 60, 60),
+    Font = Enum.Font.GothamBold,
+    TextSize = 14,
+    BackgroundTransparency = 1,
+    ZIndex = 3,
+    Parent = Main
+})
+CloseBtn.MouseButton1Click:Connect(function() Screen:Destroy() pcall(function() PlayerGui.YtDevsMobileCtrl:Destroy() end) end)
 
-local FloatingBtn = Instance.new("TextButton", Screen)
-FloatingBtn.Size = UDim2.new(0, 55, 0, 55)
-FloatingBtn.Position = UDim2.new(0.05, 0, 0.3, 0)
-FloatingBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
-FloatingBtn.Text = "YT"
-FloatingBtn.TextColor3 = Color3.fromRGB(255, 0, 60)
-FloatingBtn.Font = Enum.Font.GothamBlack
-FloatingBtn.TextSize = 18
-FloatingBtn.Visible = false
-Instance.new("UICorner", FloatingBtn).CornerRadius = UDim.new(1, 0)
-local FloatStroke = Instance.new("UIStroke", FloatingBtn)
-FloatStroke.Color = Color3.fromRGB(255, 0, 60)
-FloatStroke.Width = 2
+local FloatingBtn = create("TextButton", {
+    Size = UDim2.new(0, 55, 0, 55),
+    Position = UDim2.new(0.05, 0, 0.3, 0),
+    BackgroundColor3 = Color3.fromRGB(15, 15, 18),
+    Text = "YT",
+    TextColor3 = Color3.fromRGB(255, 0, 60),
+    Font = Enum.Font.GothamBold,
+    TextSize = 18,
+    Visible = false,
+    ZIndex = 10,
+    Parent = Screen
+})
+create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = FloatingBtn })
+local FloatStroke = create("UIStroke", { Color = Color3.fromRGB(255, 0, 60), Width = 2, Parent = FloatingBtn })
 makeDraggable(FloatingBtn)
 
 MinBtn.MouseButton1Click:Connect(function()
@@ -153,48 +199,67 @@ FloatingBtn.MouseButton1Click:Connect(function()
     Main.Visible = true
 end)
 
-local Container = Instance.new("Frame", Main)
-Container.Size = UDim2.new(1, 0, 1, -45)
-Container.Position = UDim2.new(0, 0, 0, 45)
-Container.BackgroundTransparency = 1
+-- Container com alinhamento manual pré-renderizado
+local Container = create("Frame", {
+    Size = UDim2.new(1, 0, 1, -45),
+    Position = UDim2.new(0, 0, 0, 45),
+    BackgroundTransparency = 1,
+    ZIndex = 2,
+    Parent = Main
+})
 
-local Layout = Instance.new("UIListLayout", Container)
-Layout.SortOrder = Enum.SortOrder.LayoutOrder
-Layout.Padding = UDim.new(0, 6)
-Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+local Layout = create("UIListLayout", {
+    SortOrder = Enum.SortOrder.LayoutOrder,
+    Padding = UDim.new(0, 6),
+    HorizontalAlignment = Enum.HorizontalAlignment.Center,
+    Parent = Container
+})
 
+-- Construtores Dinâmicos com ZIndex Fixo
 local function createAdjuster(name, initialVal, onMinus, onPlus)
-    local frame = Instance.new("Frame", Container)
-    frame.Size = UDim2.new(1, -24, 0, 36)
-    frame.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
-    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+    local frame = create("Frame", {
+        Size = UDim2.new(1, -24, 0, 36),
+        BackgroundColor3 = Color3.fromRGB(22, 22, 26),
+        ZIndex = 3,
+        Parent = Container
+    })
+    create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = frame })
 
-    local lbl = Instance.new("TextLabel", frame)
-    lbl.Size = UDim2.new(0, 140, 1, 0)
-    lbl.Position = UDim2.new(0, 12, 0, 0)
-    lbl.Text = name .. ": " .. initialVal
-    lbl.TextColor3 = Color3.new(1, 1, 1)
-    lbl.Font = Enum.Font.GothamBold
-    lbl.TextSize = 12
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.BackgroundTransparency = 1
+    local lbl = create("TextLabel", {
+        Size = UDim2.new(0, 140, 1, 0),
+        Position = UDim2.new(0, 12, 0, 0),
+        Text = name .. ": " .. initialVal,
+        TextColor3 = Color3.new(1, 1, 1),
+        Font = Enum.Font.GothamBold,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        BackgroundTransparency = 1,
+        ZIndex = 4,
+        Parent = frame
+    })
 
-    local minus = Instance.new("TextButton", frame)
-    minus.Size = UDim2.new(0, 32, 0, 26)
-    minus.Position = UDim2.new(1, -74, 0, 5)
-    minus.Text = "◀"
-    minus.BackgroundColor3 = Color3.fromRGB(32, 32, 38)
-    minus.TextColor3 = Color3.fromRGB(255, 0, 60)
-    Instance.new("UICorner", minus)
+    local minus = create("TextButton", {
+        Size = UDim2.new(0, 32, 0, 26),
+        Position = UDim2.new(1, -74, 0, 5),
+        Text = "◀",
+        BackgroundColor3 = Color3.fromRGB(32, 32, 38),
+        TextColor3 = Color3.fromRGB(255, 0, 60),
+        ZIndex = 4,
+        Parent = frame
+    })
+    create("UICorner", { Parent = minus })
     minus.MouseButton1Click:Connect(function() onMinus(lbl) end)
 
-    local plus = Instance.new("TextButton", frame)
-    plus.Size = UDim2.new(0, 32, 0, 26)
-    plus.Position = UDim2.new(1, -38, 0, 5)
-    plus.Text = "▶"
-    plus.BackgroundColor3 = Color3.fromRGB(32, 32, 38)
-    plus.TextColor3 = Color3.fromRGB(255, 0, 60)
-    Instance.new("UICorner", plus)
+    local plus = create("TextButton", {
+        Size = UDim2.new(0, 32, 0, 26),
+        Position = UDim2.new(1, -38, 0, 5),
+        Text = "▶",
+        BackgroundColor3 = Color3.fromRGB(32, 32, 38),
+        TextColor3 = Color3.fromRGB(255, 0, 60),
+        ZIndex = 4,
+        Parent = frame
+    })
+    create("UICorner", { Parent = plus })
     plus.MouseButton1Click:Connect(function() onPlus(lbl) end)
 end
 
@@ -209,14 +274,17 @@ createAdjuster("Lente Lupa (FOV)", state.fov,
 )
 
 local function createBtn(text, color)
-    local btn = Instance.new("TextButton", Container)
-    btn.Size = UDim2.new(1, -24, 0, 38)
-    btn.Text = text
-    btn.BackgroundColor3 = color
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 11.5
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    local btn = create("TextButton", {
+        Size = UDim2.new(1, -24, 0, 38),
+        Text = text,
+        BackgroundColor3 = color,
+        TextColor3 = Color3.new(1, 1, 1),
+        Font = Enum.Font.GothamBold,
+        TextSize = 11.5,
+        ZIndex = 3,
+        Parent = Container
+    })
+    create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = btn })
     return btn
 end
 
@@ -228,37 +296,46 @@ local BtnClone = createBtn("GERAR CLONE DE ATOR", Color3.fromRGB(100, 20, 160))
 local BtnUltra = createBtn("FILTRO CINEMATIC ULTRA (OFF)", Color3.fromRGB(45, 45, 50))
 
 -- ==========================================
--- [4] JOCKSTICK E ALTITUDE MOBILE SEM FLUXO EXTRA
+-- [5] CONTROLES JOCKSTICK EM CAMADA SEPARADA
 -- ==========================================
-local MobileGui = Instance.new("ScreenGui", CoreGui)
-MobileGui.Name = "YtDevsMobileCtrl"
-MobileGui.Enabled = false
+local MobileGui = create("ScreenGui", {
+    Name = "YtDevsMobileCtrl",
+    ResetOnSpawn = false,
+    Enabled = false,
+    Parent = PlayerGui
+})
 
-local JoyBase = Instance.new("Frame", MobileGui)
-JoyBase.Size = UDim2.new(0, 110, 0, 110)
-JoyBase.Position = UDim2.new(0.06, 0, 0.60, 0)
-JoyBase.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-JoyBase.BackgroundTransparency = 0.6
-Instance.new("UICorner", JoyBase).CornerRadius = UDim.new(1, 0)
+local JoyBase = create("Frame", {
+    Size = UDim2.new(0, 110, 0, 110),
+    Position = UDim2.new(0.06, 0, 0.60, 0),
+    BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+    BackgroundTransparency = 0.6,
+    Parent = MobileGui
+})
+create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = JoyBase })
 
-local JoyStick = Instance.new("Frame", JoyBase)
-JoyStick.Size = UDim2.new(0, 42, 0, 42)
-JoyStick.Position = UDim2.new(0.5, -21, 0.5, -21)
-JoyStick.BackgroundColor3 = Color3.fromRGB(255, 0, 60)
-Instance.new("UICorner", JoyStick).CornerRadius = UDim.new(1, 0)
+local JoyStick = create("Frame", {
+    Size = UDim2.new(0, 42, 0, 42),
+    Position = UDim2.new(0.5, -21, 0.5, -21),
+    BackgroundColor3 = Color3.fromRGB(255, 0, 60),
+    Parent = JoyBase
+})
+create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = JoyStick })
 
 local function createAltBtn(txt, pos)
-    local b = Instance.new("TextButton", MobileGui)
-    b.Size = UDim2.new(0, 55, 0, 55)
-    b.Position = pos
-    b.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
-    b.BackgroundTransparency = 0.2
-    b.TextColor3 = Color3.new(1, 1, 1)
-    b.Text = txt
-    b.Font = Enum.Font.GothamBlack
-    b.TextSize = 22
-    Instance.new("UICorner", b)
-    Instance.new("UIStroke", b).Color = Color3.fromRGB(255, 0, 60)
+    local b = create("TextButton", {
+        Size = UDim2.new(0, 55, 0, 55),
+        Position = pos,
+        BackgroundColor3 = Color3.fromRGB(15, 15, 18),
+        BackgroundTransparency = 0.2,
+        TextColor3 = Color3.new(1, 1, 1),
+        Text = txt,
+        Font = Enum.Font.GothamBlack,
+        TextSize = 22,
+        Parent = MobileGui
+    })
+    create("UICorner", { Parent = b })
+    create("UIStroke", { Color = Color3.fromRGB(255, 0, 60), Parent = b })
     return b
 end
 
@@ -267,7 +344,7 @@ local BtnDown = createAltBtn("▼", UDim2.new(0.85, 0, 0.52, 10))
 
 BtnUp.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then state.flyUp = true end end)
 BtnUp.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then state.flyUp = false end end)
-BtnDown.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then state.flyDown = true end end)
+BtnDown.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then state.flyUp = false ; state.flyDown = true end end)
 BtnDown.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then state.flyDown = false end end)
 
 JoyBase.InputBegan:Connect(function(input)
@@ -298,7 +375,7 @@ UIS.InputEnded:Connect(function(input)
 end)
 
 -- ==========================================
--- [5] REVOLUÇÃO DA LÓGICA DE FUNÇÕES (0% LAG)
+-- [6] SISTEMAS DA MESA DE EFEITOS E EVENTOS
 -- ==========================================
 local function hideCharacterParts(char, shouldHide)
     for _, part in ipairs(char:GetDescendants()) do
@@ -319,26 +396,11 @@ local function applyGlobalVisibility()
     end
 end
 
--- Escutas inteligentes baseadas em eventos (substitui o loop infinito do RenderStepped)
 Players.PlayerAdded:Connect(function(p)
     p.CharacterAdded:Connect(function(char)
-        if state.playersHidden then
-            task.wait(0.2)
-            hideCharacterParts(char, true)
-        end
+        if state.playersHidden then task.wait(0.2) hideCharacterParts(char, true) end
     end)
 end)
-
-for _, p in ipairs(Players:GetPlayers()) do
-    if p ~= LocalPlayer then
-        p.CharacterAdded:Connect(function(char)
-            if state.playersHidden then
-                task.wait(0.2)
-                hideCharacterParts(char, true)
-            end
-        end)
-    end
-end
 
 BtnFreeCam.MouseButton1Click:Connect(function()
     state.freecam = not state.freecam
@@ -390,13 +452,15 @@ BtnGreen.MouseButton1Click:Connect(function()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
         if state.greenScreen then state.greenScreen:Destroy() end
-        state.greenScreen = Instance.new("Part", workspace)
-        state.greenScreen.Size = Vector3.new(50, 32, 1)
-        state.greenScreen.Color = Color3.fromRGB(0, 255, 0)
-        state.greenScreen.Material = Enum.Material.SmoothPlastic
-        state.greenScreen.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 6, -13)
-        state.greenScreen.Anchored = true
-        state.greenScreen.CanCollide = false
+        state.greenScreen = create("Part", {
+            Size = Vector3.new(50, 32, 1),
+            Color = Color3.fromRGB(0, 255, 0),
+            Material = Enum.Material.SmoothPlastic,
+            CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 6, -13),
+            Anchored = true,
+            CanCollide = false,
+            Parent = workspace
+        })
     end
 end)
 
@@ -459,7 +523,7 @@ BtnUltra.MouseButton1Click:Connect(function()
 end)
 
 -- ==========================================
--- [6] LOOP DE RENDERIZAÇÃO MACIA (STABLE LERP)
+-- [7] CINEMA GLIDE LERP LOOP (FLUIDEZ MAX)
 -- ==========================================
 RS.RenderStepped:Connect(function(dt)
     if state.freecam then
@@ -480,9 +544,8 @@ RS.RenderStepped:Connect(function(dt)
         local finalMove = Vector3.new(moveDir.X, moveDir.Y + vert, moveDir.Z)
         if finalMove.Magnitude > 0 then finalMove = finalMove.Unit * state.speed * dt end
         
-        -- Amortecimento Lerp corrigido por DeltaTime (Evita trepidações e lag em qualquer FPS)
         local nextCFrame = CFrame.new(targetCFrame.Position + finalMove) * lookCF
-        local smoothWeight = 1 - math.exp(-13 * dt)
+        local smoothWeight = 1 - math.exp(-14 * dt)
         Camera.CFrame = Camera.CFrame:Lerp(nextCFrame, math.clamp(smoothWeight, 0, 1))
         targetCFrame = nextCFrame
         
